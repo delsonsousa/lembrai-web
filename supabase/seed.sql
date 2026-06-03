@@ -1,0 +1,24 @@
+-- Crie primeiro um usuário no Supabase Auth para Delson e substitua o UUID abaixo.
+-- Depois rode este bloco removendo o comentário.
+--
+-- insert into public.profiles (id, name, email, role)
+-- values (
+--   'SUBSTITUA_PELO_AUTH_USER_ID',
+--   'Delson',
+--   'delson@example.com',
+--   'event_manager'
+-- )
+-- on conflict (id) do update
+-- set name = excluded.name,
+--     email = excluded.email,
+--     role = excluded.role;
+--
+-- insert into public.events (slug, name, manager_id)
+-- values (
+--   'isaac-1-ano',
+--   'Aniversário de 1 ano do Isaac',
+--   'SUBSTITUA_PELO_AUTH_USER_ID'
+-- )
+-- on conflict (slug) do update
+-- set name = excluded.name,
+--     manager_id = excluded.manager_id;
