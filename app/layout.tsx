@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Lembraí",
   description: "Álbum colaborativo privado para eventos.",
+  icons: {
+    icon: "/favicon-cropped.png",
+    shortcut: "/favicon-cropped.png",
+    apple: "/favicon-cropped.png",
+  },
 };
 
 export default function RootLayout({

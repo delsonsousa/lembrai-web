@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { formatBytes, validateMediaFile } from "@/lib/media-rules";
 import type { EventRecord, MediaDto } from "@/lib/types";
 
@@ -371,9 +372,12 @@ export function GuestAlbum({ event }: Props) {
 
             <div className="relative flex min-h-[620px] flex-col justify-end p-5 sm:p-8">
               <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#ffd7a4]">
-                  Lembraí
-                </p>
+                <div className="h-10 w-32">
+                  <BrandLogo
+                    className="h-full w-full object-contain brightness-0 invert"
+                    sizes="128px"
+                  />
+                </div>
                 <h1 className="mt-3 text-4xl font-semibold leading-[1.02] sm:text-6xl">
                   {event.name}
                 </h1>

@@ -1,6 +1,8 @@
 import { ArrowRight, Camera, Download, QrCode, Sparkles } from "lucide-react";
 import Link from "next/link";
 
+import { BrandLogo } from "@/components/brand-logo";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7f0e8] text-[#261f2d]">
@@ -10,12 +12,16 @@ export default function Home() {
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
           <nav className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-white">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f06f4f] text-lg font-semibold shadow-[0_14px_28px_rgba(240,111,79,0.3)]">
-                L
-              </span>
-              <span className="text-xl font-semibold">Lembraí</span>
-            </div>
+            <Link
+              className="inline-flex h-10 w-32 items-center transition hover:opacity-85 focus:outline-none focus:ring-4 focus:ring-white/18"
+              href="/"
+              aria-label="Lembraí"
+            >
+              <BrandLogo
+                className="h-full w-full object-contain brightness-0 invert"
+                sizes="128px"
+              />
+            </Link>
             <Link
               className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/18"
               href="/login"

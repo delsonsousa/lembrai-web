@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export function LoginForm() {
@@ -66,9 +67,12 @@ export function LoginForm() {
     <main className="min-h-screen bg-[#f7f0e8] text-[#261f2d]">
       <div className="mx-auto grid min-h-screen w-full max-w-5xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[0.9fr_1fr] lg:items-center">
         <section className="rounded-[30px] bg-[#261f2d] p-7 text-white shadow-[0_24px_80px_rgba(38,31,45,0.22)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#ffd7a4]">
-            Lembraí
-          </p>
+          <div className="h-10 w-32">
+            <BrandLogo
+              className="h-full w-full object-contain brightness-0 invert"
+              sizes="128px"
+            />
+          </div>
           <h1 className="mt-5 text-5xl font-semibold leading-[1.02]">
             Área privada para gestores.
           </h1>
