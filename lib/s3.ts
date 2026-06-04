@@ -1,4 +1,9 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let s3Client: S3Client | null = null;
@@ -50,5 +55,14 @@ export async function createReadUrl(s3Key: string, fileName?: string) {
         : undefined,
     }),
     { expiresIn: 15 * 60 }
+  );
+}
+
+export async function deleteObject(s3Key: string) {
+  await getS3Client().send(
+    new DeleteObjectCommand({
+      Bucket: getS3Bucket(),
+      Key: s3Key,
+    })
   );
 }

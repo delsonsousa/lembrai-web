@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   Loader2,
   QrCode as QrCodeIcon,
+  Trash2,
   Video,
 } from "lucide-react";
 import QRCode from "qrcode";
@@ -30,6 +31,8 @@ export function ManagerEventPanel({ eventSlug }: { eventSlug: string }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [zipState, setZipState] = useState<"idle" | "working" | "done" | "error">(
     "idle"
   );
@@ -157,6 +160,48 @@ export function ManagerEventPanel({ eventSlug }: { eventSlug: string }) {
     if (!response.ok) return;
     const body = (await response.json()) as { url: string };
     window.open(body.url, "_blank", "noopener,noreferrer");
+  }
+
+  async function deleteItem(item: MediaDto) {
+    const confirmed = window.confirm(
+      `Excluir "${item.originalFileName}"? Essa ação não pode ser desfeita.`
+    );
+    if (!confirmed) return;
+
+    setDeleteError(null);
+    setDeletingIds((current) => new Set(current).add(item.id));
+
+    try {
+      const token = await getAccessToken();
+      const response = await fetch("/api/media", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ mediaId: item.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await readApiError(response, "Não foi possível excluir o arquivo.")
+        );
+      }
+
+      setMedia((current) => current.filter((mediaItem) => mediaItem.id !== item.id));
+    } catch (deleteItemError) {
+      setDeleteError(
+        deleteItemError instanceof Error
+          ? deleteItemError.message
+          : "Não foi possível excluir o arquivo."
+      );
+    } finally {
+      setDeletingIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
+    }
   }
 
   async function downloadAllZip() {
@@ -305,6 +350,12 @@ export function ManagerEventPanel({ eventSlug }: { eventSlug: string }) {
             </div>
           )}
 
+          {deleteError && (
+            <div className="mt-4 rounded-2xl border border-[#f1b5a8] bg-[#fff1ed] px-4 py-3 text-sm text-[#9f2d20]">
+              {deleteError}
+            </div>
+          )}
+
           {media.length === 0 ? (
             <div className="mt-6 rounded-[24px] border border-dashed border-[#d9cec5] bg-[#fffaf5] p-10 text-center text-[#6d5f58]">
               Nenhum arquivo enviado ainda.
@@ -353,14 +404,29 @@ export function ManagerEventPanel({ eventSlug }: { eventSlug: string }) {
                       <span>{item.mediaType === "image" ? "Foto" : "Vídeo"}</span>
                       <span>{formatBytes(item.fileSize)}</span>
                     </div>
-                    <button
-                      className="mt-4 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#ddd1c6] bg-white px-4 text-sm font-semibold text-[#46394e]"
-                      type="button"
-                      onClick={() => downloadItem(item)}
-                    >
-                      <Download className="h-4 w-4" />
-                      Baixar arquivo
-                    </button>
+                    <div className="mt-4 grid gap-2">
+                      <button
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#ddd1c6] bg-white px-4 text-sm font-semibold text-[#46394e]"
+                        type="button"
+                        onClick={() => downloadItem(item)}
+                      >
+                        <Download className="h-4 w-4" />
+                        Baixar arquivo
+                      </button>
+                      <button
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#f1b5a8] bg-[#fff1ed] px-4 text-sm font-semibold text-[#9f2d20] disabled:opacity-60"
+                        type="button"
+                        onClick={() => deleteItem(item)}
+                        disabled={deletingIds.has(item.id)}
+                      >
+                        {deletingIds.has(item.id) ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        {deletingIds.has(item.id) ? "Excluindo" : "Excluir"}
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}

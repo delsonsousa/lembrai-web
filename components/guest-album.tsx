@@ -2,7 +2,15 @@
 
 /* eslint-disable @next/next/no-img-element -- Private S3 signed URLs are short-lived and should not go through Next image optimization. */
 
-import { CheckCircle2, FileUp, Image as ImageIcon, Video } from "lucide-react";
+import {
+  CheckCircle2,
+  FileUp,
+  Image as ImageIcon,
+  Loader2,
+  RotateCcw,
+  Trash2,
+  Video,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatBytes, validateMediaFile } from "@/lib/media-rules";
@@ -12,6 +20,7 @@ type MediaWithUrl = MediaDto & { signedUrl?: string };
 
 type UploadItem = {
   id: string;
+  file: File;
   fileName: string;
   progress: number;
   status: "uploading" | "done" | "error";
@@ -78,12 +87,14 @@ async function signGuestMediaUrl(
 
 export function GuestAlbum({ event }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const removalTimersRef = useRef<Map<string, number>>(new Map());
   const [guestToken, setGuestToken] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaWithUrl[]>([]);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const storageKey = useMemo(() => `guest_token_${event.slug}`, [event.slug]);
   const completedUploads = uploads.filter((item) => item.status === "done").length;
@@ -153,18 +164,58 @@ export function GuestAlbum({ event }: Props) {
     };
   }, [event.slug, guestToken]);
 
+  useEffect(() => {
+    const removalTimers = removalTimersRef.current;
+
+    return () => {
+      removalTimers.forEach((timer) => window.clearTimeout(timer));
+      removalTimers.clear();
+    };
+  }, []);
+
   function updateUpload(id: string, patch: Partial<UploadItem>) {
     setUploads((current) =>
       current.map((item) => (item.id === id ? { ...item, ...patch } : item))
     );
   }
 
-  async function uploadFile(file: File) {
-    const uploadId = crypto.randomUUID();
-    setUploads((current) => [
-      { id: uploadId, fileName: file.name, progress: 0, status: "uploading" },
-      ...current,
-    ]);
+  function scheduleUploadRemoval(id: string) {
+    const existingTimer = removalTimersRef.current.get(id);
+    if (existingTimer) window.clearTimeout(existingTimer);
+
+    const timer = window.setTimeout(() => {
+      setUploads((current) =>
+        current.filter((item) => item.id !== id || item.status !== "done")
+      );
+      removalTimersRef.current.delete(id);
+    }, 10_000);
+
+    removalTimersRef.current.set(id, timer);
+  }
+
+  async function uploadFile(file: File, existingUploadId?: string) {
+    const uploadId = existingUploadId ?? crypto.randomUUID();
+
+    if (existingUploadId) {
+      updateUpload(uploadId, {
+        progress: 0,
+        status: "uploading",
+        error: undefined,
+      });
+    }
+
+    if (!existingUploadId) {
+      setUploads((current) => [
+        {
+          id: uploadId,
+          file,
+          fileName: file.name,
+          progress: 0,
+          status: "uploading",
+        },
+        ...current,
+      ]);
+    }
 
     try {
       if (!guestToken) {
@@ -206,7 +257,7 @@ export function GuestAlbum({ event }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eventSlug: event.slug,
-        guestToken,
+          guestToken,
           s3Key: presign.s3Key,
           originalFileName: file.name,
           mimeType: file.type,
@@ -225,6 +276,7 @@ export function GuestAlbum({ event }: Props) {
 
       setMedia((current) => [saved, ...current]);
       updateUpload(uploadId, { progress: 100, status: "done" });
+      scheduleUploadRemoval(uploadId);
       setMessage("Recebemos seu envio. Obrigado por guardar esse momento.");
     } catch (uploadError) {
       updateUpload(uploadId, {
@@ -239,6 +291,60 @@ export function GuestAlbum({ event }: Props) {
           ? uploadError.message
           : "Não foi possível enviar este arquivo."
       );
+    }
+  }
+
+  function retryUpload(item: UploadItem) {
+    setError(null);
+    setMessage(null);
+    void uploadFile(item.file, item.id);
+  }
+
+  async function deleteItem(item: MediaDto) {
+    const confirmed = window.confirm(
+      `Excluir "${item.originalFileName}"? Essa ação não pode ser desfeita.`
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setMessage(null);
+    setDeletingIds((current) => new Set(current).add(item.id));
+
+    try {
+      if (!guestToken) {
+        throw new Error("Identificação anônima ainda não está pronta.");
+      }
+
+      const response = await fetch("/api/media", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaId: item.id,
+          eventSlug: event.slug,
+          guestToken,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await readError(response, "Não foi possível excluir o arquivo.")
+        );
+      }
+
+      setMedia((current) => current.filter((mediaItem) => mediaItem.id !== item.id));
+      setMessage("Arquivo excluído.");
+    } catch (deleteItemError) {
+      setError(
+        deleteItemError instanceof Error
+          ? deleteItemError.message
+          : "Não foi possível excluir o arquivo."
+      );
+    } finally {
+      setDeletingIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
     }
   }
 
@@ -331,9 +437,22 @@ export function GuestAlbum({ event }: Props) {
                     <span className="min-w-0 truncate font-medium">
                       {item.fileName}
                     </span>
-                    <span className="shrink-0 text-[#6d5f58]">
-                      {item.status === "error" ? "Erro" : `${item.progress}%`}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-[#6d5f58]">
+                        {item.status === "error" ? "Erro" : `${item.progress}%`}
+                      </span>
+                      {item.status === "error" && (
+                        <button
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#f1b5a8] bg-white text-[#b42318] transition hover:bg-[#fff1ed] focus:outline-none focus:ring-4 focus:ring-[#f06f4f]/20"
+                          type="button"
+                          onClick={() => retryUpload(item)}
+                          aria-label={`Tentar enviar ${item.fileName} novamente`}
+                          title="Tentar novamente"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#eadfd5]">
                     <div
@@ -414,6 +533,19 @@ export function GuestAlbum({ event }: Props) {
                     <p className="mt-1 text-xs text-[#6d5f58]">
                       {formatBytes(item.fileSize)}
                     </p>
+                    <button
+                      className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl border border-[#f1b5a8] bg-[#fff1ed] px-3 text-sm font-semibold text-[#9f2d20] disabled:opacity-60"
+                      type="button"
+                      onClick={() => deleteItem(item)}
+                      disabled={deletingIds.has(item.id)}
+                    >
+                      {deletingIds.has(item.id) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      {deletingIds.has(item.id) ? "Excluindo" : "Excluir"}
+                    </button>
                   </div>
                 </article>
               ))}
