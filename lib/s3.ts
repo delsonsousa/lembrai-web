@@ -1,6 +1,7 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -55,6 +56,15 @@ export async function createReadUrl(s3Key: string, fileName?: string) {
         : undefined,
     }),
     { expiresIn: 15 * 60 }
+  );
+}
+
+export async function getObjectMetadata(s3Key: string) {
+  return getS3Client().send(
+    new HeadObjectCommand({
+      Bucket: getS3Bucket(),
+      Key: s3Key,
+    })
   );
 }
 

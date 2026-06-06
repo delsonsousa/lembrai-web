@@ -27,21 +27,14 @@ Copie `.env.example` para `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_DB_URL=
-SUPABASE_DB_PASSWORD=
 
 AWS_REGION=
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_S3_BUCKET=
-
-BOOTSTRAP_ADMIN_SECRET=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` é usado apenas nas APIs server-side para validar sessão, criar usuários gestores e aplicar regras de ownership.
-`SUPABASE_DB_URL` é uma connection string Postgres server-side usada apenas pelo `/setup` para aplicar o schema automaticamente.
-`SUPABASE_DB_PASSWORD` é opcional e permite colar a URL do pooler com `[YOUR-PASSWORD]`, deixando a senha real separada para evitar problemas com caracteres especiais.
-`BOOTSTRAP_ADMIN_SECRET` protege a criação automática do primeiro `platform_admin`.
 
 ## Setup Supabase
 
@@ -50,28 +43,9 @@ BOOTSTRAP_ADMIN_SECRET=
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
-   - `SUPABASE_DB_URL`
-   - `SUPABASE_DB_PASSWORD`
-   - `BOOTSTRAP_ADMIN_SECRET`
-3. Rode o app e acesse `/setup`.
-4. Se o banco ainda não tiver as tabelas, informe o segredo e clique em `Configurar banco automaticamente`.
-5. Preencha segredo, nome, e-mail e senha para criar automaticamente:
-   - usuário no Supabase Auth
-   - profile `platform_admin`
-6. Depois faça login em `/login`.
-
-O `/setup` fica bloqueado automaticamente depois que existe pelo menos um `platform_admin`.
-
-Você encontra `SUPABASE_DB_URL` no botão Connect do Supabase. Use a connection string do `Transaction pooler`, mantenha essa variável sem prefixo `NEXT_PUBLIC_` e reinicie o `npm run dev` depois de alterar `.env.local`.
-
-Você pode deixar a senha separada:
-
-```bash
-SUPABASE_DB_URL=postgresql://postgres.PROJECT_REF:[YOUR-PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres
-SUPABASE_DB_PASSWORD=sua-senha-do-banco
-```
-
-Se preferir não configurar `SUPABASE_DB_URL`, ainda é possível rodar `supabase/schema.sql` manualmente no SQL Editor.
+3. Rode `supabase/schema.sql` manualmente no SQL Editor do Supabase.
+4. Crie o primeiro usuário administrador pelo Supabase Auth e insira o profile `platform_admin` correspondente.
+5. Depois faça login em `/login`.
 
 Opcionalmente rode `supabase/seed.sql` e substitua `SUBSTITUA_PELO_AUTH_USER_ID` pelo usuário Auth do gestor Delson para criar o evento seed:
 
@@ -105,7 +79,6 @@ Em produção, troque os origins pelo domínio real.
 
 - Landing: `/`
 - Login: `/login`
-- Bootstrap admin inicial: `/setup`
 - Platform admin: `/admin`
 - Criar gestor: `/admin/managers/new`
 - Dashboard gestor: `/dashboard`

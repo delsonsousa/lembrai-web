@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/events/lock-expired",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/retention/reminders",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/retention/purge-expired",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}

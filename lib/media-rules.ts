@@ -1,5 +1,6 @@
 export const IMAGE_LIMIT_BYTES = 30 * 1024 * 1024;
 export const VIDEO_LIMIT_BYTES = 500 * 1024 * 1024;
+export const EVENT_STORAGE_LIMIT_BYTES = 20 * 1024 * 1024 * 1024;
 
 export type MediaType = "image" | "video";
 
@@ -32,6 +33,24 @@ export function validateMediaFile(mimeType: string, fileSize: number) {
   }
 
   return { ok: true as const, mediaType };
+}
+
+export function validateEventStorageLimit(
+  currentStorageBytes: number,
+  incomingFileSize: number
+) {
+  if (
+    !Number.isFinite(currentStorageBytes) ||
+    !Number.isFinite(incomingFileSize) ||
+    currentStorageBytes < 0 ||
+    incomingFileSize <= 0
+  ) {
+    return { ok: false as const };
+  }
+
+  return {
+    ok: currentStorageBytes + incomingFileSize <= EVENT_STORAGE_LIMIT_BYTES,
+  } as const;
 }
 
 export function sanitizeFileName(fileName: string) {

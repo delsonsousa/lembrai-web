@@ -1,4 +1,4 @@
-import { checkAuthContext } from "@/lib/auth";
+import { checkAuthContext, getManagerAccessStatus, isManagerRole } from "@/lib/auth";
 import { toProfileDto } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -17,6 +17,9 @@ export async function GET(request: Request) {
   }
 
   const { auth } = result;
+  const access = isManagerRole(auth.profile.role)
+    ? await getManagerAccessStatus(auth)
+    : null;
 
   return Response.json({
     user: {
@@ -24,5 +27,13 @@ export async function GET(request: Request) {
       email: auth.email,
     },
     profile: toProfileDto(auth.profile),
+    onboarding:
+      access && !access.ok
+        ? {
+            complete: false,
+            reason: access.reason,
+            redirectTo: access.redirectTo,
+          }
+        : { complete: true },
   });
 }

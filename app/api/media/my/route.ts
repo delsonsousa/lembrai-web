@@ -1,22 +1,34 @@
 import {
   asMediaRows,
+  getEventByPublicIdAndSlug,
   getEventBySlug,
   getGuestByToken,
   getSupabaseAdmin,
 } from "@/lib/supabase";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { toMediaDto } from "@/lib/types";
 
 export async function GET(request: Request) {
+  const limited = rateLimit(request, {
+    key: "media-my",
+    limit: 180,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   try {
     const url = new URL(request.url);
     const eventSlug = url.searchParams.get("eventSlug");
+    const publicId = url.searchParams.get("publicId");
     const guestToken = url.searchParams.get("guestToken");
 
     if (!eventSlug || !guestToken) {
       return Response.json({ error: "Informe evento e convidado." }, { status: 400 });
     }
 
-    const event = await getEventBySlug(eventSlug);
+    const event = publicId
+      ? await getEventByPublicIdAndSlug(publicId, eventSlug)
+      : await getEventBySlug(eventSlug);
     if (!event) {
       return Response.json({ error: "Evento não encontrado." }, { status: 404 });
     }

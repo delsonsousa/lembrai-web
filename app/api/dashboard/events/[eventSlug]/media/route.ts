@@ -1,20 +1,30 @@
-import { assertManagerCanAccessEvent, requireAuth } from "@/lib/auth";
-import { asMediaRows, getEventBySlug, getSupabaseAdmin } from "@/lib/supabase";
+import { assertManagerCanAccessEvent, requireManagerReady } from "@/lib/auth";
+import { ensureEventUploadStatus } from "@/lib/events";
+import {
+  asMediaRows,
+  getEventByManagerIdAndSlug,
+  getSupabaseAdmin,
+} from "@/lib/supabase";
 import { toEventDto, toMediaDto } from "@/lib/types";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ eventSlug: string }> }
 ) {
-  const authResult = await requireAuth(request, ["event_manager"]);
+  const authResult = await requireManagerReady(request);
   if (!authResult.ok) return authResult.response;
 
   const { eventSlug } = await params;
-  const event = await getEventBySlug(eventSlug);
+  const foundEvent = await getEventByManagerIdAndSlug(
+    authResult.auth.profile.id,
+    eventSlug
+  );
 
-  if (!event) {
+  if (!foundEvent) {
     return Response.json({ error: "Evento não encontrado." }, { status: 404 });
   }
+
+  const event = await ensureEventUploadStatus(foundEvent);
 
   if (!assertManagerCanAccessEvent(authResult.auth.profile, event)) {
     return Response.json({ error: "Acesso negado ao evento." }, { status: 403 });
@@ -29,7 +39,10 @@ export async function GET(
   if (error) throw error;
 
   return Response.json({
-    event: toEventDto(event),
+    event: {
+      ...toEventDto(event),
+      managerPublicId: authResult.auth.profile.public_id,
+    },
     media: asMediaRows(data).map(toMediaDto),
   });
 }

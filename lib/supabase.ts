@@ -44,6 +44,41 @@ export async function getEventBySlug(slug: string) {
     .from("events")
     .select("*")
     .eq("slug", slug)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as EventRecord | null;
+}
+
+export async function getEventByManagerIdAndSlug(managerId: string, slug: string) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("events")
+    .select("*")
+    .eq("manager_id", managerId)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as EventRecord | null;
+}
+
+export async function getEventByPublicIdAndSlug(publicId: string, slug: string) {
+  const { data: profile, error: profileError } = await getSupabaseAdmin()
+    .from("profiles")
+    .select("id")
+    .eq("public_id", publicId)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+  if (!profile?.id) return null;
+
+  const { data, error } = await getSupabaseAdmin()
+    .from("events")
+    .select("*")
+    .eq("manager_id", profile.id)
+    .eq("slug", slug)
     .maybeSingle();
 
   if (error) throw error;
@@ -86,6 +121,20 @@ export async function getOrCreateGuest(eventId: string, guestToken: string) {
   return data as GuestRecord;
 }
 
+export async function getEventMediaStorageBytes(eventId: string) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("media")
+    .select("file_size")
+    .eq("event_id", eventId);
+
+  if (error) throw error;
+
+  return (Array.isArray(data) ? data : []).reduce((total, row) => {
+    const fileSize = Number((row as Pick<MediaRecord, "file_size">).file_size);
+    return Number.isFinite(fileSize) ? total + fileSize : total;
+  }, 0);
+}
+
 export function asEvents(data: unknown) {
   return (Array.isArray(data) ? data : []) as EventRecord[];
 }
@@ -96,12 +145,4 @@ export function asMediaRows(data: unknown) {
 
 export function asProfiles(data: unknown) {
   return (Array.isArray(data) ? data : []) as ProfileRecord[];
-}
-
-export function getSetupMessage(error: unknown) {
-  if (error instanceof Error && error.message.startsWith("Missing environment")) {
-    return "Configure as variáveis de ambiente do Supabase para carregar eventos.";
-  }
-
-  return "Não foi possível carregar os dados agora.";
 }

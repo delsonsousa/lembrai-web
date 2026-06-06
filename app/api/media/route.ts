@@ -1,50 +1,51 @@
-import { assertManagerCanAccessEvent, getAuthContext } from "@/lib/auth";
 import { deleteObject } from "@/lib/s3";
+import { ensureEventUploadStatus } from "@/lib/events";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
+  getEventByPublicIdAndSlug,
   getEventBySlug,
   getGuestByToken,
   getSupabaseAdmin,
 } from "@/lib/supabase";
-import type { EventRecord, MediaRecord } from "@/lib/types";
+import type { MediaRecord } from "@/lib/types";
 
 type DeleteMediaPayload = {
   mediaId?: string;
   eventSlug?: string;
+  publicId?: string;
   guestToken?: string;
 };
-
-async function canAuthenticatedUserDelete(request: Request, media: MediaRecord) {
-  const auth = await getAuthContext(request);
-  if (!auth) return false;
-  if (auth.profile.role === "platform_admin") return true;
-
-  const { data: eventData, error: eventError } = await getSupabaseAdmin()
-    .from("events")
-    .select("*")
-    .eq("id", media.event_id)
-    .maybeSingle();
-
-  if (eventError) throw eventError;
-  if (!eventData) return false;
-
-  return assertManagerCanAccessEvent(auth.profile, eventData as EventRecord);
-}
 
 async function canGuestDelete(
   media: MediaRecord,
   eventSlug?: string,
+  publicId?: string,
   guestToken?: string
 ) {
   if (!eventSlug || !guestToken) return false;
 
-  const event = await getEventBySlug(eventSlug);
-  if (!event || event.id !== media.event_id) return false;
+  const foundEvent = publicId
+    ? await getEventByPublicIdAndSlug(publicId, eventSlug)
+    : await getEventBySlug(eventSlug);
+  if (!foundEvent || foundEvent.id !== media.event_id) return false;
+
+  const event = await ensureEventUploadStatus(foundEvent);
+  if (event.status === "locked" || event.status === "archived") return false;
 
   const guest = await getGuestByToken(event.id, guestToken);
-  return Boolean(guest && guest.id === media.guest_id);
+  if (!guest || guest.id !== media.guest_id) return false;
+
+  return { eventId: event.id, guestId: guest.id };
 }
 
 export async function DELETE(request: Request) {
+  const limited = rateLimit(request, {
+    key: "media-delete",
+    limit: 80,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   try {
     const body = (await request.json()) as DeleteMediaPayload;
 
@@ -65,9 +66,12 @@ export async function DELETE(request: Request) {
     }
 
     const media = mediaData as MediaRecord;
-    const allowed =
-      (await canAuthenticatedUserDelete(request, media)) ||
-      (await canGuestDelete(media, body.eventSlug, body.guestToken));
+    const allowed = await canGuestDelete(
+      media,
+      body.eventSlug,
+      body.publicId,
+      body.guestToken
+    );
 
     if (!allowed) {
       return Response.json({ error: "Acesso negado ao arquivo." }, { status: 403 });
@@ -81,6 +85,18 @@ export async function DELETE(request: Request) {
       .eq("id", media.id);
 
     if (deleteError) throw deleteError;
+
+    await supabase.from("audit_logs").insert({
+      actor_role: "guest",
+      action: "guest_deleted_media",
+      target_type: "media",
+      target_id: media.id,
+      metadata: {
+        event_id: allowed.eventId,
+        media_id: media.id,
+        guest_id: allowed.guestId,
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

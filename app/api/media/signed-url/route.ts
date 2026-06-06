@@ -1,14 +1,23 @@
 import { getAuthContext, assertManagerCanAccessEvent } from "@/lib/auth";
 import { isSafeS3Key } from "@/lib/media-rules";
 import { createReadUrl } from "@/lib/s3";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   getEventBySlug,
+  getEventByPublicIdAndSlug,
   getGuestByToken,
   getSupabaseAdmin,
 } from "@/lib/supabase";
 import type { EventRecord, MediaRecord } from "@/lib/types";
 
 export async function GET(request: Request) {
+  const limited = rateLimit(request, {
+    key: "media-signed-url",
+    limit: 240,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   try {
     const url = new URL(request.url);
     const s3Key = url.searchParams.get("s3Key");
@@ -35,6 +44,19 @@ export async function GET(request: Request) {
 
     if (auth) {
       if (auth.profile.role === "platform_admin") {
+        await getSupabaseAdmin().from("audit_logs").insert({
+          actor_user_id: auth.profile.id,
+          actor_role: auth.profile.role,
+          action: "admin_accessed_event_media",
+          target_type: "event",
+          target_id: media.event_id,
+          metadata: {
+            media_id: media.id,
+            s3_key: media.s3_key,
+            source: "signed_url",
+          },
+        });
+
         return Response.json({
           url: await createReadUrl(s3Key, download ? fileName : undefined),
         });
@@ -58,10 +80,13 @@ export async function GET(request: Request) {
     }
 
     const eventSlug = url.searchParams.get("eventSlug");
+    const publicId = url.searchParams.get("publicId");
     const guestToken = url.searchParams.get("guestToken");
 
     if (eventSlug && guestToken) {
-      const event = await getEventBySlug(eventSlug);
+      const event = publicId
+        ? await getEventByPublicIdAndSlug(publicId, eventSlug)
+        : await getEventBySlug(eventSlug);
       if (event) {
         const guest = await getGuestByToken(event.id, guestToken);
         if (
