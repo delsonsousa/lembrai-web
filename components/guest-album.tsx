@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
 /* eslint-disable @next/next/no-img-element -- Private S3 signed URLs are short-lived and should not go through Next image optimization. */
 
 import {
   CalendarDays,
   Camera,
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   Film,
   Image as ImageIcon,
@@ -17,14 +19,15 @@ import {
   Trash2,
   UploadCloud,
   Video,
-} from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-import { showToast } from "@/components/app-toast";
-import { BrandLogo } from "@/components/brand-logo";
-import { formatBytes, validateMediaFile } from "@/lib/media-rules";
-import type { EventRecord, MediaDto } from "@/lib/types";
+import { showToast } from '@/components/app-toast';
+import { BrandLogo } from '@/components/brand-logo';
+import { formatBytes, validateMediaFile } from '@/lib/media-rules';
+import type { EventRecord, MediaDto } from '@/lib/types';
 
 type MediaWithUrl = MediaDto & { signedUrl?: string };
 
@@ -33,7 +36,7 @@ type UploadItem = {
   file: File;
   fileName: string;
   progress: number;
-  status: "queued" | "uploading" | "done" | "error";
+  status: 'queued' | 'uploading' | 'done' | 'error';
   error?: string;
 };
 
@@ -41,7 +44,7 @@ type Props = {
   event: EventRecord & { managerPublicId?: string | null };
 };
 
-type GalleryView = "grid" | "list";
+type GalleryView = 'grid' | 'list';
 
 const INITIAL_VISIBLE_MEDIA = 12;
 const MEDIA_PAGE_SIZE = 12;
@@ -51,10 +54,10 @@ function isHeicLikeFile(mimeType: string, fileName: string) {
   const normalizedMimeType = mimeType.toLowerCase();
   const normalizedFileName = fileName.toLowerCase();
   return (
-    normalizedMimeType.includes("heic") ||
-    normalizedMimeType.includes("heif") ||
-    normalizedFileName.endsWith(".heic") ||
-    normalizedFileName.endsWith(".heif")
+    normalizedMimeType.includes('heic') ||
+    normalizedMimeType.includes('heif') ||
+    normalizedFileName.endsWith('.heic') ||
+    normalizedFileName.endsWith('.heif')
   );
 }
 
@@ -63,22 +66,27 @@ function isHeicLike(item: MediaDto) {
 }
 
 function canPreviewImage(item: MediaDto) {
-  return item.mediaType === "image" && !isHeicLike(item);
+  return item.mediaType === 'image' && !isHeicLike(item);
 }
 
 function formatEventDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
   }).format(new Date(value));
 }
 
 function replaceFileExtension(fileName: string, extension: string) {
-  const cleanExtension = extension.startsWith(".") ? extension : `.${extension}`;
-  const lastSlash = Math.max(fileName.lastIndexOf("/"), fileName.lastIndexOf("\\"));
+  const cleanExtension = extension.startsWith('.')
+    ? extension
+    : `.${extension}`;
+  const lastSlash = Math.max(
+    fileName.lastIndexOf('/'),
+    fileName.lastIndexOf('\\'),
+  );
   const filePartStart = lastSlash + 1;
-  const dotIndex = fileName.lastIndexOf(".");
+  const dotIndex = fileName.lastIndexOf('.');
 
   if (dotIndex > filePartStart) {
     return `${fileName.slice(0, dotIndex)}${cleanExtension}`;
@@ -90,15 +98,15 @@ function replaceFileExtension(fileName: string, extension: string) {
 async function normalizeUploadFile(file: File) {
   if (!isHeicLikeFile(file.type, file.name)) return file;
 
-  const { heicTo } = await import("heic-to");
+  const { heicTo } = await import('heic-to');
   const converted = await heicTo({
     blob: file,
-    type: "image/jpeg",
+    type: 'image/jpeg',
     quality: 0.9,
   });
 
-  return new File([converted], replaceFileExtension(file.name, "jpg"), {
-    type: "image/jpeg",
+  return new File([converted], replaceFileExtension(file.name, 'jpg'), {
+    type: 'image/jpeg',
     lastModified: file.lastModified,
   });
 }
@@ -106,17 +114,21 @@ async function normalizeUploadFile(file: File) {
 async function readError(response: Response, fallback: string) {
   try {
     const body = await response.json();
-    return typeof body.error === "string" ? body.error : fallback;
+    return typeof body.error === 'string' ? body.error : fallback;
   } catch {
     return fallback;
   }
 }
 
-function putToS3(uploadUrl: string, file: File, onProgress: (value: number) => void) {
+function putToS3(
+  uploadUrl: string,
+  file: File,
+  onProgress: (value: number) => void,
+) {
   return new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("PUT", uploadUrl);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.open('PUT', uploadUrl);
+    xhr.setRequestHeader('Content-Type', file.type);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -129,11 +141,12 @@ function putToS3(uploadUrl: string, file: File, onProgress: (value: number) => v
         onProgress(100);
         resolve();
       } else {
-        reject(new Error("Falha ao enviar o arquivo para o armazenamento."));
+        reject(new Error('Falha ao enviar o arquivo para o armazenamento.'));
       }
     };
 
-    xhr.onerror = () => reject(new Error("Conexão interrompida durante o upload."));
+    xhr.onerror = () =>
+      reject(new Error('Conexão interrompida durante o upload.'));
     xhr.send(file);
   });
 }
@@ -142,15 +155,17 @@ async function signGuestMediaUrl(
   item: MediaDto,
   eventSlug: string,
   guestToken: string,
-  publicId?: string
+  publicId?: string,
 ): Promise<MediaWithUrl> {
-  const publicQuery = publicId ? `&publicId=${encodeURIComponent(publicId)}` : "";
+  const publicQuery = publicId
+    ? `&publicId=${encodeURIComponent(publicId)}`
+    : '';
   const response = await fetch(
     `/api/media/signed-url?s3Key=${encodeURIComponent(
-      item.s3Key
+      item.s3Key,
     )}&eventSlug=${encodeURIComponent(eventSlug)}&guestToken=${encodeURIComponent(
-      guestToken
-    )}${publicQuery}`
+      guestToken,
+    )}${publicQuery}`,
   );
 
   if (!response.ok) return item;
@@ -168,39 +183,52 @@ export function GuestAlbum({ event }: Props) {
   const [loading, setLoading] = useState(true);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [pendingDelete, setPendingDelete] = useState<MediaDto | null>(null);
-  const [visibleMediaCount, setVisibleMediaCount] =
-    useState(INITIAL_VISIBLE_MEDIA);
-  const [galleryView, setGalleryView] = useState<GalleryView>("grid");
+  const [visibleMediaCount, setVisibleMediaCount] = useState(
+    INITIAL_VISIBLE_MEDIA,
+  );
+  const [galleryView, setGalleryView] = useState<GalleryView>('grid');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [uploadDockExpanded, setUploadDockExpanded] = useState(false);
 
   const storageKey = useMemo(() => `guest_token_${event.slug}`, [event.slug]);
   const privacyStorageKey = useMemo(
     () => `guest_privacy_${event.slug}`,
-    [event.slug]
+    [event.slug],
   );
   const eventPublicId = event.managerPublicId ?? undefined;
-  const eventLocked = event.status === "locked" || event.status === "archived";
+  const eventLocked = event.status === 'locked' || event.status === 'archived';
   const uploadDisabled = eventLocked || !guestToken;
   const mediaStats = useMemo(
     () => ({
-      images: media.filter((item) => item.mediaType === "image").length,
-      videos: media.filter((item) => item.mediaType === "video").length,
+      images: media.filter((item) => item.mediaType === 'image').length,
+      videos: media.filter((item) => item.mediaType === 'video').length,
       size: media.reduce((total, item) => total + item.fileSize, 0),
     }),
-    [media]
+    [media],
   );
   const visibleMedia = useMemo(
     () => media.slice(0, visibleMediaCount),
-    [media, visibleMediaCount]
+    [media, visibleMediaCount],
   );
   const remainingMediaCount = Math.max(media.length - visibleMedia.length, 0);
+  const activeUploadItems = useMemo(
+    () =>
+      uploads.filter(
+        (item) => item.status === 'queued' || item.status === 'uploading',
+      ),
+    [uploads],
+  );
+  const uploadDockItems = useMemo(
+    () => uploads.filter((item) => item.status !== 'done'),
+    [uploads],
+  );
   const uploadButtonLabel = eventLocked
-    ? "Envios encerrados"
+    ? 'Envios encerrados'
     : guestToken
-      ? "Enviar fotos ou vídeos"
-      : "Preparando seu acesso";
+      ? 'Enviar fotos ou vídeos'
+      : 'Preparando seu acesso';
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -220,7 +248,7 @@ export function GuestAlbum({ event }: Props) {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setPrivacyAccepted(
-        window.localStorage.getItem(privacyStorageKey) === "accepted"
+        window.localStorage.getItem(privacyStorageKey) === 'accepted',
       );
     }, 0);
 
@@ -230,7 +258,7 @@ export function GuestAlbum({ event }: Props) {
   function updatePrivacyAccepted(accepted: boolean) {
     setPrivacyAccepted(accepted);
     if (accepted) {
-      window.localStorage.setItem(privacyStorageKey, "accepted");
+      window.localStorage.setItem(privacyStorageKey, 'accepted');
     } else {
       window.localStorage.removeItem(privacyStorageKey);
     }
@@ -287,32 +315,37 @@ export function GuestAlbum({ event }: Props) {
       try {
         const response = await fetch(
           `/api/media/my?eventSlug=${encodeURIComponent(
-            event.slug
-          )}&guestToken=${encodeURIComponent(loadedGuestToken)}`
+            event.slug,
+          )}&guestToken=${encodeURIComponent(loadedGuestToken)}`,
         );
 
         if (!response.ok) {
           throw new Error(
-            await readError(response, "Não foi possível carregar seus envios.")
+            await readError(response, 'Não foi possível carregar seus envios.'),
           );
         }
 
         const body = (await response.json()) as { media: MediaDto[] };
         const enriched = await Promise.all(
           body.media.map((item) =>
-            signGuestMediaUrl(item, event.slug, loadedGuestToken, eventPublicId)
-          )
+            signGuestMediaUrl(
+              item,
+              event.slug,
+              loadedGuestToken,
+              eventPublicId,
+            ),
+          ),
         );
 
         if (!cancelled) setMedia(enriched);
       } catch (loadError) {
         if (!cancelled) {
           showToast({
-            type: "error",
+            type: 'error',
             message:
               loadError instanceof Error
                 ? loadError.message
-                : "Não foi possível carregar seus envios.",
+                : 'Não foi possível carregar seus envios.',
           });
         }
       } finally {
@@ -338,7 +371,7 @@ export function GuestAlbum({ event }: Props) {
 
   function updateUpload(id: string, patch: Partial<UploadItem>) {
     setUploads((current) =>
-      current.map((item) => (item.id === id ? { ...item, ...patch } : item))
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
   }
 
@@ -348,7 +381,7 @@ export function GuestAlbum({ event }: Props) {
 
     const timer = window.setTimeout(() => {
       setUploads((current) =>
-        current.filter((item) => item.id !== id || item.status !== "done")
+        current.filter((item) => item.id !== id || item.status !== 'done'),
       );
       removalTimersRef.current.delete(id);
     }, 5_000);
@@ -359,14 +392,14 @@ export function GuestAlbum({ event }: Props) {
   async function uploadFile(
     file: File,
     existingUploadId?: string,
-    privacyConfirmed = privacyAccepted
+    privacyConfirmed = privacyAccepted,
   ) {
     const uploadId = existingUploadId ?? crypto.randomUUID();
 
     if (existingUploadId) {
       updateUpload(uploadId, {
         progress: 0,
-        status: "uploading",
+        status: 'uploading',
         error: undefined,
       });
     }
@@ -378,7 +411,7 @@ export function GuestAlbum({ event }: Props) {
           file,
           fileName: file.name,
           progress: 0,
-          status: "uploading",
+          status: 'uploading',
         },
         ...current,
       ]);
@@ -386,12 +419,12 @@ export function GuestAlbum({ event }: Props) {
 
     try {
       if (!guestToken) {
-        throw new Error("Identificação anônima ainda não está pronta.");
+        throw new Error('Identificação anônima ainda não está pronta.');
       }
 
       if (!privacyConfirmed) {
         throw new Error(
-          "Aceite o aviso de privacidade antes de enviar suas fotos ou vídeos."
+          'Aceite o aviso de privacidade antes de enviar suas fotos ou vídeos.',
         );
       }
 
@@ -400,7 +433,10 @@ export function GuestAlbum({ event }: Props) {
       try {
         uploadFileToSend = await normalizeUploadFile(file);
       } catch (conversionError) {
-        console.warn("HEIC conversion failed; uploading original file.", conversionError);
+        console.warn(
+          'HEIC conversion failed; uploading original file.',
+          conversionError,
+        );
       }
 
       if (uploadFileToSend !== file) {
@@ -412,13 +448,13 @@ export function GuestAlbum({ event }: Props) {
 
       const validation = validateMediaFile(
         uploadFileToSend.type,
-        uploadFileToSend.size
+        uploadFileToSend.size,
       );
       if (!validation.ok) throw new Error(validation.message);
 
-      const presignResponse = await fetch("/api/uploads/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const presignResponse = await fetch('/api/uploads/presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventSlug: event.slug,
           publicId: eventPublicId,
@@ -431,7 +467,10 @@ export function GuestAlbum({ event }: Props) {
 
       if (!presignResponse.ok) {
         throw new Error(
-          await readError(presignResponse, "Não foi possível iniciar o upload.")
+          await readError(
+            presignResponse,
+            'Não foi possível iniciar o upload.',
+          ),
         );
       }
 
@@ -441,12 +480,12 @@ export function GuestAlbum({ event }: Props) {
       };
 
       await putToS3(presign.uploadUrl, uploadFileToSend, (progress) =>
-        updateUpload(uploadId, { progress })
+        updateUpload(uploadId, { progress }),
       );
 
-      const completeResponse = await fetch("/api/uploads/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const completeResponse = await fetch('/api/uploads/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventSlug: event.slug,
           publicId: eventPublicId,
@@ -460,7 +499,10 @@ export function GuestAlbum({ event }: Props) {
 
       if (!completeResponse.ok) {
         throw new Error(
-          await readError(completeResponse, "Upload feito, mas não foi registrado.")
+          await readError(
+            completeResponse,
+            'Upload feito, mas não foi registrado.',
+          ),
         );
       }
 
@@ -469,26 +511,26 @@ export function GuestAlbum({ event }: Props) {
         body.media,
         event.slug,
         guestToken,
-        eventPublicId
+        eventPublicId,
       );
 
       setMedia((current) => [saved, ...current]);
-      updateUpload(uploadId, { progress: 100, status: "done" });
+      updateUpload(uploadId, { progress: 100, status: 'done' });
       scheduleUploadRemoval(uploadId);
     } catch (uploadError) {
       updateUpload(uploadId, {
-        status: "error",
+        status: 'error',
         error:
           uploadError instanceof Error
             ? uploadError.message
-            : "Não foi possível enviar este arquivo.",
+            : 'Não foi possível enviar este arquivo.',
       });
       showToast({
-        type: "error",
+        type: 'error',
         message:
           uploadError instanceof Error
             ? uploadError.message
-            : "Não foi possível enviar este arquivo.",
+            : 'Não foi possível enviar este arquivo.',
       });
     }
   }
@@ -502,12 +544,12 @@ export function GuestAlbum({ event }: Props) {
 
     try {
       if (!guestToken) {
-        throw new Error("Identificação anônima ainda não está pronta.");
+        throw new Error('Identificação anônima ainda não está pronta.');
       }
 
-      const response = await fetch("/api/media", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/media', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mediaId: item.id,
           eventSlug: event.slug,
@@ -518,20 +560,22 @@ export function GuestAlbum({ event }: Props) {
 
       if (!response.ok) {
         throw new Error(
-          await readError(response, "Não foi possível excluir o arquivo.")
+          await readError(response, 'Não foi possível excluir o arquivo.'),
         );
       }
 
-      setMedia((current) => current.filter((mediaItem) => mediaItem.id !== item.id));
+      setMedia((current) =>
+        current.filter((mediaItem) => mediaItem.id !== item.id),
+      );
       setPendingDelete(null);
-      showToast({ type: "success", message: "Arquivo excluído." });
+      showToast({ type: 'success', message: 'Arquivo excluído.' });
     } catch (deleteItemError) {
       showToast({
-        type: "error",
+        type: 'error',
         message:
           deleteItemError instanceof Error
             ? deleteItemError.message
-            : "Não foi possível excluir o arquivo.",
+            : 'Não foi possível excluir o arquivo.',
       });
     } finally {
       setDeletingIds((current) => {
@@ -542,15 +586,20 @@ export function GuestAlbum({ event }: Props) {
     }
   }
 
-  async function processFiles(files: File[], privacyConfirmed = privacyAccepted) {
+  async function processFiles(
+    files: File[],
+    privacyConfirmed = privacyAccepted,
+  ) {
     if (!files.length) return;
+
+    setUploadDockExpanded(false);
 
     const queuedUploads = files.map((file) => ({
       id: crypto.randomUUID(),
       file,
       fileName: file.name,
       progress: 0,
-      status: "queued" as const,
+      status: 'queued' as const,
     }));
 
     setUploads((current) => [...queuedUploads, ...current]);
@@ -567,11 +616,11 @@ export function GuestAlbum({ event }: Props) {
     await Promise.all(
       Array.from(
         { length: Math.min(MAX_CONCURRENT_UPLOADS, queuedUploads.length) },
-        uploadNextQueuedFile
-      )
+        uploadNextQueuedFile,
+      ),
     );
 
-    if (inputRef.current) inputRef.current.value = "";
+    if (inputRef.current) inputRef.current.value = '';
   }
 
   function handleFiles(files: FileList | null) {
@@ -643,9 +692,6 @@ export function GuestAlbum({ event }: Props) {
                 <span className="mt-2 max-w-xs text-sm leading-6 text-[#6d5f58]">
                   Toque aqui ou arraste vários arquivos.
                 </span>
-                <span className="mt-4 rounded-full bg-white/82 px-4 py-2 text-xs font-semibold uppercase tracking-[0.13em] text-[#245b3c]">
-                  Até {MAX_CONCURRENT_UPLOADS} envios por vez
-                </span>
                 <span className="mt-2 text-xs font-medium text-[#8a7a70]">
                   Fotos 30 MB · vídeos 500 MB
                 </span>
@@ -660,30 +706,8 @@ export function GuestAlbum({ event }: Props) {
                   </div>
                 </div>
               ) : null}
-
-              {uploads.length > 0 ? (
-                <div className="mt-4 flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-semibold">Fila de envio</h3>
-                      <p className="mt-1 text-xs text-[#8a7a70]">
-                        Até {MAX_CONCURRENT_UPLOADS} arquivos sobem ao mesmo tempo.
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-[#f2eadf] px-3 py-1 text-xs font-semibold text-[#6d5f58]">
-                      {uploads.length}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid min-h-0 min-w-0 gap-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
-                    {uploads.map((item) => (
-                      <UploadRow key={item.id} item={item} onRetry={retryUpload} />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </aside>
           </div>
-
         </div>
       </section>
 
@@ -700,10 +724,26 @@ export function GuestAlbum({ event }: Props) {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <GalleryStat icon={<Images className="h-4 w-4" />} value={String(media.length)} label="Arquivos" />
-                <GalleryStat icon={<ImageIcon className="h-4 w-4" />} value={String(mediaStats.images)} label="Fotos" />
-                <GalleryStat icon={<Video className="h-4 w-4" />} value={String(mediaStats.videos)} label="Vídeos" />
-                <GalleryStat icon={<Film className="h-4 w-4" />} value={formatBytes(mediaStats.size)} label="Total" />
+                <GalleryStat
+                  icon={<Images className="h-4 w-4" />}
+                  value={String(media.length)}
+                  label="Arquivos"
+                />
+                <GalleryStat
+                  icon={<ImageIcon className="h-4 w-4" />}
+                  value={String(mediaStats.images)}
+                  label="Fotos"
+                />
+                <GalleryStat
+                  icon={<Video className="h-4 w-4" />}
+                  value={String(mediaStats.videos)}
+                  label="Vídeos"
+                />
+                <GalleryStat
+                  icon={<Film className="h-4 w-4" />}
+                  value={formatBytes(mediaStats.size)}
+                  label="Total"
+                />
               </div>
             </div>
 
@@ -742,9 +782,12 @@ export function GuestAlbum({ event }: Props) {
               <>
                 <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-white/72 px-4 py-3 text-sm text-[#6d5f58]">
                   <span>
-                    Mostrando{" "}
-                    <strong className="text-[#261f2d]">{visibleMedia.length}</strong>{" "}
-                    de <strong className="text-[#261f2d]">{media.length}</strong>
+                    Mostrando{' '}
+                    <strong className="text-[#261f2d]">
+                      {visibleMedia.length}
+                    </strong>{' '}
+                    de{' '}
+                    <strong className="text-[#261f2d]">{media.length}</strong>
                   </span>
                   <div className="flex shrink-0 items-center gap-2">
                     {remainingMediaCount > 0 ? (
@@ -755,7 +798,7 @@ export function GuestAlbum({ event }: Props) {
                     <ViewToggle value={galleryView} onChange={setGalleryView} />
                   </div>
                 </div>
-                {galleryView === "grid" ? (
+                {galleryView === 'grid' ? (
                   <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6">
                     {visibleMedia.map((item) => (
                       <GuestMediaCard
@@ -778,24 +821,30 @@ export function GuestAlbum({ event }: Props) {
                     ))}
                   </div>
                 )}
-                {(remainingMediaCount > 0 || visibleMediaCount > INITIAL_VISIBLE_MEDIA) ? (
+                {remainingMediaCount > 0 ||
+                visibleMediaCount > INITIAL_VISIBLE_MEDIA ? (
                   <div className="mt-6 grid gap-3 sm:flex sm:justify-center">
                     {remainingMediaCount > 0 ? (
                       <button
                         className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#261f2d] px-5 font-semibold text-white shadow-[0_16px_38px_rgba(38,31,45,0.18)] transition hover:-translate-y-0.5"
                         type="button"
                         onClick={() =>
-                          setVisibleMediaCount((current) => current + MEDIA_PAGE_SIZE)
+                          setVisibleMediaCount(
+                            (current) => current + MEDIA_PAGE_SIZE,
+                          )
                         }
                       >
-                        Carregar mais {Math.min(MEDIA_PAGE_SIZE, remainingMediaCount)}
+                        Carregar mais{' '}
+                        {Math.min(MEDIA_PAGE_SIZE, remainingMediaCount)}
                       </button>
                     ) : null}
                     {visibleMediaCount > INITIAL_VISIBLE_MEDIA ? (
                       <button
                         className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#ddd1c6] bg-white px-5 font-semibold text-[#46394e] transition hover:bg-[#fff7ed]"
                         type="button"
-                        onClick={() => setVisibleMediaCount(INITIAL_VISIBLE_MEDIA)}
+                        onClick={() =>
+                          setVisibleMediaCount(INITIAL_VISIBLE_MEDIA)
+                        }
                       >
                         Recolher galeria
                       </button>
@@ -807,6 +856,18 @@ export function GuestAlbum({ event }: Props) {
           </div>
         </div>
       </section>
+      {typeof document !== 'undefined' && activeUploadItems.length > 0
+        ? createPortal(
+            <UploadDock
+              activeItems={activeUploadItems}
+              expanded={uploadDockExpanded}
+              items={uploadDockItems}
+              onRetry={retryUpload}
+              onToggle={() => setUploadDockExpanded((current) => !current)}
+            />,
+            document.body,
+          )
+        : null}
       {privacyModalOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#120d16]/72 p-5 backdrop-blur-md"
@@ -839,15 +900,15 @@ export function GuestAlbum({ event }: Props) {
             <div className="mt-5 rounded-[24px] border border-[#eadfd2] bg-white/76 p-4 text-sm leading-6 text-[#5d514c]">
               Ao continuar, você confirma que entende que suas fotos e vídeos
               serão armazenados para este evento, poderão ser acessados pelo
-              organizador e serão tratados conforme a{" "}
+              organizador e serão tratados conforme a{' '}
               <Link
                 className="font-semibold text-[#261f2d] underline underline-offset-2"
                 href="/privacy"
                 target="_blank"
               >
                 Política de Privacidade
-              </Link>{" "}
-              e os{" "}
+              </Link>{' '}
+              e os{' '}
               <Link
                 className="font-semibold text-[#261f2d] underline underline-offset-2"
                 href="/terms"
@@ -963,6 +1024,93 @@ function GalleryStat({
   );
 }
 
+function UploadDock({
+  activeItems,
+  expanded,
+  items,
+  onRetry,
+  onToggle,
+}: {
+  activeItems: UploadItem[];
+  expanded: boolean;
+  items: UploadItem[];
+  onRetry: (item: UploadItem) => void;
+  onToggle: () => void;
+}) {
+  const uploadingCount = activeItems.filter(
+    (item) => item.status === 'uploading',
+  ).length;
+  const queuedCount = activeItems.filter(
+    (item) => item.status === 'queued',
+  ).length;
+  const averageProgress = Math.round(
+    activeItems.reduce(
+      (total, item) => total + (item.status === 'queued' ? 0 : item.progress),
+      0,
+    ) / Math.max(activeItems.length, 1),
+  );
+
+  return (
+    <section
+      className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-[90] overflow-hidden rounded-[26px] border border-white/78 bg-[#fffaf5]/96 text-[#261f2d] shadow-[0_28px_90px_rgba(18,13,22,0.28)] backdrop-blur-2xl animate-[toast-enter_220ms_ease-out_both] sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[26rem]"
+      aria-label="Uploads em andamento"
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/55"
+        aria-expanded={expanded}
+      >
+        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#261f2d] text-white shadow-[0_14px_34px_rgba(38,31,45,0.18)]">
+          <UploadCloud className="h-5 w-5" />
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f06f4f] px-1 text-[10px] font-bold">
+            {activeItems.length}
+          </span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className="truncate font-semibold">
+              Enviando {activeItems.length} arquivo(s)
+            </p>
+            <span className="shrink-0 text-xs font-semibold text-[#245b3c]">
+              {averageProgress}%
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-xs text-[#7a6c62]">
+            {uploadingCount} ativo(s) · {queuedCount} na fila · até{' '}
+            {MAX_CONCURRENT_UPLOADS} por vez
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#eadfd5]">
+            <div
+              className="h-full rounded-full bg-[#245b3c] transition-[width]"
+              style={{ width: `${averageProgress}%` }}
+            />
+          </div>
+        </div>
+
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2eadf] text-[#6d5f58]">
+          {expanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+        </span>
+      </button>
+
+      {expanded ? (
+        <div className="max-h-[min(22rem,56svh)] overflow-y-auto border-t border-[#eadfd5] p-3 [scrollbar-width:thin]">
+          <div className="grid gap-2">
+            {items.map((item) => (
+              <UploadRow key={item.id} item={item} onRetry={onRetry} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function UploadRow({
   item,
   onRetry,
@@ -970,18 +1118,18 @@ function UploadRow({
   item: UploadItem;
   onRetry: (item: UploadItem) => void;
 }) {
-  const isError = item.status === "error";
-  const isDone = item.status === "done";
-  const isQueued = item.status === "queued";
+  const isError = item.status === 'error';
+  const isDone = item.status === 'done';
+  const isQueued = item.status === 'queued';
 
   return (
     <div
       className={`min-w-0 overflow-hidden rounded-[18px] border p-3 shadow-[0_8px_22px_rgba(38,31,45,0.05)] transition-colors ${
         isDone
-          ? "border-[#b9dbc0] bg-[#f0fbef]"
+          ? 'border-[#b9dbc0] bg-[#f0fbef]'
           : isQueued
-            ? "border-[#eadfd5] bg-white/72"
-            : "border-[#eadfd5] bg-[#fffaf5]"
+            ? 'border-[#eadfd5] bg-white/72'
+            : 'border-[#eadfd5] bg-[#fffaf5]'
       }`}
     >
       <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
@@ -994,24 +1142,24 @@ function UploadRow({
           </p>
           <p className="mt-1 truncate text-[11px] font-medium uppercase tracking-[0.14em] text-[#8a7a70]">
             {isError
-              ? "Aguardando nova tentativa"
+              ? 'Aguardando nova tentativa'
               : isDone
-                ? "Envio concluído"
+                ? 'Envio concluído'
                 : isQueued
-                  ? "Na fila"
-                  : "Enviando arquivo"}
+                  ? 'Na fila'
+                  : 'Enviando arquivo'}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span
             className={`inline-flex min-h-7 max-w-[6.5rem] items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
               isError
-                ? "bg-[#fff1ed] text-[#b42318]"
+                ? 'bg-[#fff1ed] text-[#b42318]'
                 : isDone
-                  ? "bg-[#245b3c] text-white"
+                  ? 'bg-[#245b3c] text-white'
                   : isQueued
-                    ? "bg-[#f2eadf] text-[#6d5f58]"
-                    : "bg-[#edf6e8] text-[#245b3c]"
+                    ? 'bg-[#f2eadf] text-[#6d5f58]'
+                    : 'bg-[#edf6e8] text-[#245b3c]'
             }`}
           >
             {isDone ? (
@@ -1020,9 +1168,9 @@ function UploadRow({
                 Concluído
               </>
             ) : isError ? (
-              "Erro"
+              'Erro'
             ) : isQueued ? (
-              "Na fila"
+              'Na fila'
             ) : (
               `${item.progress}%`
             )}
@@ -1044,12 +1192,12 @@ function UploadRow({
         <div
           className={`h-full rounded-full transition-[width,background-color] ${
             isError
-              ? "bg-[#d92d20]"
+              ? 'bg-[#d92d20]'
               : isDone
-                ? "bg-[#2f8f54]"
+                ? 'bg-[#2f8f54]'
                 : isQueued
-                  ? "bg-[#d8c8bb]"
-                  : "bg-[#245b3c]"
+                  ? 'bg-[#d8c8bb]'
+                  : 'bg-[#245b3c]'
           }`}
           style={{ width: `${isQueued ? 8 : item.progress}%` }}
         />
@@ -1078,27 +1226,27 @@ function ViewToggle({
     >
       <button
         className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition ${
-          value === "grid"
-            ? "bg-[#261f2d] text-white shadow-[0_10px_24px_rgba(38,31,45,0.18)]"
-            : "text-[#6d5f58] hover:bg-white/80 hover:text-[#261f2d]"
+          value === 'grid'
+            ? 'bg-[#261f2d] text-white shadow-[0_10px_24px_rgba(38,31,45,0.18)]'
+            : 'text-[#6d5f58] hover:bg-white/80 hover:text-[#261f2d]'
         }`}
         type="button"
-        onClick={() => onChange("grid")}
+        onClick={() => onChange('grid')}
         aria-label="Ver em grade"
-        aria-pressed={value === "grid"}
+        aria-pressed={value === 'grid'}
       >
         <LayoutGrid className="h-4 w-4" />
       </button>
       <button
         className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition ${
-          value === "list"
-            ? "bg-[#261f2d] text-white shadow-[0_10px_24px_rgba(38,31,45,0.18)]"
-            : "text-[#6d5f58] hover:bg-white/80 hover:text-[#261f2d]"
+          value === 'list'
+            ? 'bg-[#261f2d] text-white shadow-[0_10px_24px_rgba(38,31,45,0.18)]'
+            : 'text-[#6d5f58] hover:bg-white/80 hover:text-[#261f2d]'
         }`}
         type="button"
-        onClick={() => onChange("list")}
+        onClick={() => onChange('list')}
         aria-label="Ver em lista"
-        aria-pressed={value === "list"}
+        aria-pressed={value === 'list'}
       >
         <List className="h-4 w-4" />
       </button>
@@ -1108,11 +1256,7 @@ function ViewToggle({
 
 function AnimatedCheckIcon() {
   return (
-    <svg
-      className="h-3.5 w-3.5"
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-    >
+    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" aria-hidden="true">
       <path
         className="animate-[guest-check-draw_520ms_ease-out_120ms_forwards] [stroke-dasharray:18] [stroke-dashoffset:18]"
         d="M3.5 8.2 6.6 11 12.5 4.8"
@@ -1140,7 +1284,7 @@ function GuestMediaCard({
       <div className="absolute inset-0">
         {item.signedUrl && canPreviewImage(item) ? (
           <MediaImagePreview item={item} />
-        ) : item.signedUrl && item.mediaType === "video" ? (
+        ) : item.signedUrl && item.mediaType === 'video' ? (
           <video
             className="h-full w-full object-cover"
             src={item.signedUrl}
@@ -1167,17 +1311,19 @@ function GuestMediaCard({
       </button>
       <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-white/16 px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md">
-          {item.mediaType === "image" ? (
+          {item.mediaType === 'image' ? (
             <ImageIcon className="h-3 w-3" />
           ) : (
             <Video className="h-3 w-3" />
           )}
-          {item.mediaType === "image" ? "Foto" : "Vídeo"}
+          {item.mediaType === 'image' ? 'Foto' : 'Vídeo'}
         </div>
         <p className="mt-2 truncate text-sm font-semibold">
           {item.originalFileName}
         </p>
-        <p className="mt-0.5 text-xs text-white/66">{formatBytes(item.fileSize)}</p>
+        <p className="mt-0.5 text-xs text-white/66">
+          {formatBytes(item.fileSize)}
+        </p>
       </div>
     </article>
   );
@@ -1197,7 +1343,7 @@ function GuestMediaListItem({
       <div className="aspect-square overflow-hidden rounded-2xl bg-[#e6ddd4]">
         {item.signedUrl && canPreviewImage(item) ? (
           <MediaImagePreview item={item} />
-        ) : item.signedUrl && item.mediaType === "video" ? (
+        ) : item.signedUrl && item.mediaType === 'video' ? (
           <video
             className="h-full w-full object-cover"
             src={item.signedUrl}
@@ -1209,7 +1355,7 @@ function GuestMediaListItem({
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          {item.mediaType === "image" ? (
+          {item.mediaType === 'image' ? (
             <ImageIcon className="h-4 w-4 shrink-0 text-[#245b3c]" />
           ) : (
             <Video className="h-4 w-4 shrink-0 text-[#245b3c]" />
@@ -1219,7 +1365,7 @@ function GuestMediaListItem({
           </p>
         </div>
         <p className="mt-1 text-sm text-[#6d5f58]">
-          {item.mediaType === "image" ? "Foto" : "Vídeo"}
+          {item.mediaType === 'image' ? 'Foto' : 'Vídeo'}
         </p>
       </div>
       <p className="hidden text-right text-sm font-semibold text-[#6d5f58] sm:block">
@@ -1271,7 +1417,7 @@ function UnavailablePreview({
   if (compact) {
     return (
       <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#efe5da,#ddd4ca)] text-[#245b3c]">
-        {item.mediaType === "image" ? (
+        {item.mediaType === 'image' ? (
           <ImageIcon className="h-6 w-6" />
         ) : (
           <Video className="h-6 w-6" />
@@ -1291,8 +1437,8 @@ function UnavailablePreview({
         </p>
         <p className="mt-1 text-xs leading-5">
           {isHeic
-            ? "HEIC foi enviado, mas este navegador não exibe prévia."
-            : "Arquivo enviado sem prévia."}
+            ? 'HEIC foi enviado, mas este navegador não exibe prévia.'
+            : 'Arquivo enviado sem prévia.'}
         </p>
       </div>
       {item.signedUrl ? (
