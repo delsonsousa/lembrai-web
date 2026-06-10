@@ -1,9 +1,9 @@
 import { deleteObject } from "@/lib/s3";
 import { ensureEventUploadStatus } from "@/lib/events";
+import { isSafeS3Key } from "@/lib/media-rules";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   getEventByPublicIdAndSlug,
-  getEventBySlug,
   getGuestByToken,
   getSupabaseAdmin,
 } from "@/lib/supabase";
@@ -22,11 +22,9 @@ async function canGuestDelete(
   publicId?: string,
   guestToken?: string
 ) {
-  if (!eventSlug || !guestToken) return false;
+  if (!eventSlug || !publicId || !guestToken) return false;
 
-  const foundEvent = publicId
-    ? await getEventByPublicIdAndSlug(publicId, eventSlug)
-    : await getEventBySlug(eventSlug);
+  const foundEvent = await getEventByPublicIdAndSlug(publicId, eventSlug);
   if (!foundEvent || foundEvent.id !== media.event_id) return false;
 
   const event = await ensureEventUploadStatus(foundEvent);
@@ -75,6 +73,10 @@ export async function DELETE(request: Request) {
 
     if (!allowed) {
       return Response.json({ error: "Acesso negado ao arquivo." }, { status: 403 });
+    }
+
+    if (!isSafeS3Key(media.s3_key)) {
+      return Response.json({ error: "Arquivo inválido." }, { status: 400 });
     }
 
     await deleteObject(media.s3_key);

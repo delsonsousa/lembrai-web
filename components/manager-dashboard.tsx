@@ -299,7 +299,7 @@ function EventCard({ event, now }: { event: EventDto; now: number }) {
   const locked = event.status === "locked" || event.status === "archived";
   const guestPath = event.managerPublicId
     ? `/${event.managerPublicId}/e/${event.slug}`
-    : `/e/${event.slug}`;
+    : "";
 
   return (
     <article className="overflow-hidden rounded-[28px] border border-[#eadfd2] bg-[#fffaf3] p-5 shadow-[0_18px_48px_rgba(38,31,45,0.08)] transition hover:-translate-y-0.5 hover:border-[#f06f4f]/24 hover:bg-white hover:shadow-[0_28px_70px_rgba(38,31,45,0.12)]">
@@ -322,7 +322,7 @@ function EventCard({ event, now }: { event: EventDto; now: number }) {
         {event.name}
       </h3>
       <p className="mt-2 truncate font-mono text-sm text-[#75675f]">
-        {guestPath}
+        {guestPath || "Link público indisponível"}
       </p>
       <p className="mt-3 text-sm font-semibold text-[#75675f]">
         Data do evento: {formatDate(event.eventDate)}
@@ -364,15 +364,21 @@ function EventCard({ event, now }: { event: EventDto; now: number }) {
           Gerenciar fotos
           <ArrowRight className="h-4 w-4" />
         </Link>
-        <Link
-          href={guestPath}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#eadfd2] bg-white px-4 text-sm font-semibold text-[#261f2d] transition hover:-translate-y-0.5 hover:border-[#d8c8bb]"
-        >
-          Ver como convidado
-          <ExternalLink className="h-4 w-4" />
-        </Link>
+        {guestPath ? (
+          <Link
+            href={guestPath}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#eadfd2] bg-white px-4 text-sm font-semibold text-[#261f2d] transition hover:-translate-y-0.5 hover:border-[#d8c8bb]"
+          >
+            Ver como convidado
+            <ExternalLink className="h-4 w-4" />
+          </Link>
+        ) : (
+          <span className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#eadfd2] bg-white/60 px-4 text-sm font-semibold text-[#9b8d84]">
+            Link indisponível
+          </span>
+        )}
       </div>
     </article>
   );

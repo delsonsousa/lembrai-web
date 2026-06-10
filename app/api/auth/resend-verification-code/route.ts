@@ -37,18 +37,8 @@ export async function POST(request: Request) {
 
     if (profileError) throw profileError;
 
-    if (!profile) {
-      return Response.json(
-        { error: "Não encontramos uma conta em cadastro para este e-mail." },
-        { status: 404 }
-      );
-    }
-
-    if (profile.email_verified) {
-      return Response.json(
-        { error: "Este e-mail já foi confirmado. Volte para o login." },
-        { status: 409 }
-      );
+    if (!profile || profile.email_verified) {
+      return Response.json({ ok: true });
     }
 
     const now = new Date().toISOString();

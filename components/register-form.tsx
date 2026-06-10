@@ -8,6 +8,7 @@ import { useState, type FormEvent } from "react";
 import { showToast } from "@/components/app-toast";
 import { BrandLogo } from "@/components/brand-logo";
 import { PurchaseFlowStepper } from "@/components/purchase-flow";
+import { validatePasswordStrength } from "@/lib/password";
 
 export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean }) {
   const router = useRouter();
@@ -33,8 +34,9 @@ export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean 
       return;
     }
 
-    if (password.length < 6) {
-      showToast({ type: "error", message: "A senha precisa ter pelo menos 6 caracteres." });
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.ok) {
+      showToast({ type: "error", message: passwordValidation.message });
       return;
     }
 

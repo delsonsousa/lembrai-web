@@ -57,6 +57,8 @@ export function LoginForm() {
         message:
           body?.code === 'PROFILE_NOT_FOUND'
             ? 'Login válido, mas este usuário ainda não tem profile. Peça para um administrador criar seu acesso.'
+            : body?.code === 'ACCESS_CHECK_FAILED'
+              ? 'Login válido, mas a validação de acesso falhou. Verifique se as migrações do Supabase foram aplicadas.'
             : 'Sessão inválida. Confira as chaves do Supabase e tente novamente.',
       });
       setLoading(false);

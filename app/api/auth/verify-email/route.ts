@@ -59,8 +59,8 @@ export async function POST(request: Request) {
     if (profileError) throw profileError;
     if (!profile) {
       return Response.json(
-        { error: "Conta não encontrada para este e-mail." },
-        { status: 404 }
+        { error: "Código inválido ou expirado." },
+        { status: 400 }
       );
     }
 

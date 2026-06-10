@@ -1,20 +1,135 @@
 import {
+  EVENT_STORAGE_LIMIT_BYTES,
   getMediaIdFromS3Key,
   isSafeS3Key,
   validateEventStorageLimit,
   validateMediaFile,
+  validateMediaSignature,
 } from "@/lib/media-rules";
 import { ensureEventUploadStatus, eventLockedResponse } from "@/lib/events";
 import {
-  getEventMediaStorageBytes,
   getEventByPublicIdAndSlug,
-  getEventBySlug,
+  getEventMediaStorageBytes,
   getGuestByToken,
   getSupabaseAdmin,
 } from "@/lib/supabase";
-import { getObjectMetadata } from "@/lib/s3";
+import { deleteObject, getObjectMetadata, getObjectPrefixBytes } from "@/lib/s3";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { toMediaDto } from "@/lib/types";
+import {
+  toMediaDto,
+  type EventRecord,
+  type GuestRecord,
+  type MediaRecord,
+} from "@/lib/types";
+
+type RegisterMediaInput = {
+  event: EventRecord;
+  fileSize: number;
+  guest: GuestRecord;
+  mediaId: string;
+  mediaType: "image" | "video";
+  mimeType: string;
+  originalFileName: string;
+  s3Key: string;
+};
+
+function isStorageLimitError(error: unknown) {
+  return error instanceof Error
+    ? error.message.includes("storage_limit_exceeded")
+    : typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof error.message === "string" &&
+        error.message.includes("storage_limit_exceeded");
+}
+
+function isMissingRegisterMediaRpcError(error: unknown) {
+  if (typeof error !== "object" || error === null) return false;
+
+  const maybeError = error as { code?: string; message?: string };
+  return (
+    maybeError.code === "PGRST202" ||
+    maybeError.message?.includes(
+      "Could not find the function public.register_media_upload"
+    ) === true
+  );
+}
+
+async function findExistingMedia(mediaId: string, s3Key: string) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("media")
+    .select("*")
+    .eq("id", mediaId)
+    .eq("s3_key", s3Key)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as MediaRecord | null;
+}
+
+async function insertMediaRecord(input: RegisterMediaInput) {
+  const currentStorageBytes = await getEventMediaStorageBytes(input.event.id);
+  const storageValidation = validateEventStorageLimit(
+    currentStorageBytes,
+    input.fileSize
+  );
+
+  if (!storageValidation.ok) {
+    throw new Error("storage_limit_exceeded");
+  }
+
+  const { data, error } = await getSupabaseAdmin()
+    .from("media")
+    .insert({
+      id: input.mediaId,
+      event_id: input.event.id,
+      guest_id: input.guest.id,
+      s3_key: input.s3Key,
+      original_file_name: input.originalFileName,
+      mime_type: input.mimeType,
+      file_size: input.fileSize,
+      media_type: input.mediaType,
+      created_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    const existing = await findExistingMedia(input.mediaId, input.s3Key);
+    if (existing) return existing;
+
+    throw error;
+  }
+
+  return data as MediaRecord;
+}
+
+async function registerMediaUpload(input: RegisterMediaInput) {
+  const { data, error } = await getSupabaseAdmin()
+    .rpc("register_media_upload", {
+      p_event_id: input.event.id,
+      p_file_size: input.fileSize,
+      p_guest_id: input.guest.id,
+      p_media_id: input.mediaId,
+      p_media_type: input.mediaType,
+      p_mime_type: input.mimeType,
+      p_original_file_name: input.originalFileName,
+      p_s3_key: input.s3Key,
+      p_storage_limit: EVENT_STORAGE_LIMIT_BYTES,
+    })
+    .single();
+
+  if (!error) return data as MediaRecord;
+
+  if (!isMissingRegisterMediaRpcError(error)) {
+    throw error;
+  }
+
+  console.warn(
+    "register_media_upload RPC is missing; falling back to direct media insert."
+  );
+  return insertMediaRecord(input);
+}
 
 export async function POST(request: Request) {
   const limited = rateLimit(request, {
@@ -38,6 +153,7 @@ export async function POST(request: Request) {
 
     if (
       typeof eventSlug !== "string" ||
+      typeof publicId !== "string" ||
       typeof guestToken !== "string" ||
       typeof s3Key !== "string" ||
       typeof originalFileName !== "string" ||
@@ -50,15 +166,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const validation = validateMediaFile(mimeType, fileSize);
+    const validation = validateMediaFile(mimeType, fileSize, originalFileName);
     if (!validation.ok) {
       return Response.json({ error: validation.message }, { status: 400 });
     }
 
-    const foundEvent =
-      typeof publicId === "string" && publicId
-        ? await getEventByPublicIdAndSlug(publicId, eventSlug)
-        : await getEventBySlug(eventSlug);
+    const foundEvent = await getEventByPublicIdAndSlug(publicId, eventSlug);
     if (!foundEvent) {
       return Response.json({ error: "Evento não encontrado." }, { status: 404 });
     }
@@ -95,7 +208,7 @@ export async function POST(request: Request) {
     if (
       actualSize !== fileSize ||
       !actualMimeType ||
-      actualMimeType.toLowerCase() !== mimeType.toLowerCase()
+      actualMimeType.toLowerCase() !== validation.mimeType
     ) {
       return Response.json(
         { error: "Arquivo enviado não confere com os dados informados." },
@@ -103,37 +216,50 @@ export async function POST(request: Request) {
       );
     }
 
-    const currentStorageBytes = await getEventMediaStorageBytes(event.id);
-    const storageValidation = validateEventStorageLimit(
-      currentStorageBytes,
-      fileSize
+    const signatureValidation = validateMediaSignature(
+      actualMimeType,
+      originalFileName,
+      await getObjectPrefixBytes(s3Key)
     );
-    if (!storageValidation.ok) {
+    if (!signatureValidation.ok) {
+      await deleteObject(s3Key).catch((deleteError) => {
+        console.error("invalid uploaded object cleanup error", deleteError);
+      });
+
       return Response.json(
-        { error: "Não foi possível registrar o upload." },
+        { error: signatureValidation.message },
         { status: 400 }
       );
     }
 
-    const { data, error } = await getSupabaseAdmin()
-      .from("media")
-      .insert({
-        id: mediaId,
-        event_id: event.id,
-        guest_id: guest.id,
-        s3_key: s3Key,
-        original_file_name: originalFileName,
-        mime_type: mimeType,
-        file_size: fileSize,
-        media_type: validation.mediaType,
-        created_at: new Date().toISOString(),
-      })
-      .select("*")
-      .single();
+    let mediaRecord: MediaRecord;
+    try {
+      mediaRecord = await registerMediaUpload({
+        event,
+        fileSize,
+        guest,
+        mediaId,
+        mediaType: validation.mediaType,
+        mimeType: validation.mimeType,
+        originalFileName,
+        s3Key,
+      });
+    } catch (error) {
+      await deleteObject(s3Key).catch((deleteError) => {
+        console.error("unregistered uploaded object cleanup error", deleteError);
+      });
 
-    if (error) throw error;
+      if (isStorageLimitError(error)) {
+        return Response.json(
+          { error: "Não foi possível registrar o upload." },
+          { status: 400 }
+        );
+      }
 
-    return Response.json({ media: toMediaDto(data) });
+      throw error;
+    }
+
+    return Response.json({ media: toMediaDto(mediaRecord) });
   } catch (error) {
     console.error("complete upload error", error);
     return Response.json(

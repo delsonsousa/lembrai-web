@@ -24,7 +24,7 @@ alter table public.profiles add column if not exists updated_at timestamptz defa
 alter table public.profiles alter column name drop not null;
 
 update public.profiles
-set public_id = lower(substr(replace(id::text, '-', ''), 1, 10))
+set public_id = encode(gen_random_bytes(12), 'hex')
 where public_id is null;
 
 do $$
@@ -256,6 +256,80 @@ create index if not exists email_verification_codes_email_idx on public.email_ve
 create index if not exists audit_logs_actor_user_id_idx on public.audit_logs(actor_user_id);
 create index if not exists audit_logs_target_idx on public.audit_logs(target_type, target_id);
 create index if not exists leads_email_idx on public.leads(email);
+
+create or replace function public.register_media_upload(
+  p_media_id uuid,
+  p_event_id uuid,
+  p_guest_id uuid,
+  p_s3_key text,
+  p_original_file_name text,
+  p_mime_type text,
+  p_file_size bigint,
+  p_media_type text,
+  p_storage_limit bigint
+)
+returns public.media
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_storage bigint;
+  inserted_media public.media;
+begin
+  if p_file_size <= 0 or p_storage_limit <= 0 then
+    raise exception 'invalid_file_size';
+  end if;
+
+  if p_media_type not in ('image', 'video') then
+    raise exception 'invalid_media_type';
+  end if;
+
+  perform 1
+  from public.events
+  where id = p_event_id
+  for update;
+
+  if not found then
+    raise exception 'event_not_found';
+  end if;
+
+  select coalesce(sum(file_size), 0)
+  into current_storage
+  from public.media
+  where event_id = p_event_id;
+
+  if current_storage + p_file_size > p_storage_limit then
+    raise exception 'storage_limit_exceeded';
+  end if;
+
+  insert into public.media (
+    id,
+    event_id,
+    guest_id,
+    s3_key,
+    original_file_name,
+    mime_type,
+    file_size,
+    media_type,
+    created_at
+  )
+  values (
+    p_media_id,
+    p_event_id,
+    p_guest_id,
+    p_s3_key,
+    p_original_file_name,
+    p_mime_type,
+    p_file_size,
+    p_media_type,
+    now()
+  )
+  returning * into inserted_media;
+
+  return inserted_media;
+end;
+$$;
 
 alter table public.profiles enable row level security;
 alter table public.events enable row level security;

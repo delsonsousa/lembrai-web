@@ -33,6 +33,18 @@ html {
   isolation: isolate;
 }
 
+.motion-spark-field {
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 215, 164, 0.52) 0 1px, transparent 2px),
+    radial-gradient(circle at 42% 16%, rgba(255, 255, 255, 0.38) 0 1px, transparent 2px),
+    radial-gradient(circle at 76% 34%, rgba(240, 111, 79, 0.44) 0 1px, transparent 2px),
+    radial-gradient(circle at 84% 70%, rgba(255, 215, 164, 0.34) 0 1px, transparent 2px),
+    radial-gradient(circle at 28% 78%, rgba(255, 255, 255, 0.28) 0 1px, transparent 2px);
+  background-size: 18rem 18rem;
+  animation: spark-field-drift 18s linear infinite;
+  opacity: 0.72;
+}
+
 .motion-rise {
   animation: landing-rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -62,22 +74,23 @@ html {
 }
 
 .motion-hero-photo {
-  animation: hero-photo-breathe 18s ease-in-out infinite alternate;
+  animation: hero-photo-breathe 14s ease-in-out infinite alternate;
   transform-origin: center;
+  will-change: filter, transform;
 }
 
 .motion-gradient-drift {
-  animation: gradient-drift 14s ease-in-out infinite alternate;
-  background-size: 130% 130%;
+  animation: gradient-drift 10s ease-in-out infinite alternate;
+  background-size: 160% 160%;
 }
 
 .motion-ambient-one {
-  animation: ambient-orbit-one 16s ease-in-out infinite alternate;
+  animation: ambient-orbit-one 11s ease-in-out infinite alternate;
   will-change: transform;
 }
 
 .motion-ambient-two {
-  animation: ambient-orbit-two 18s ease-in-out infinite alternate;
+  animation: ambient-orbit-two 13s ease-in-out infinite alternate;
   will-change: transform;
 }
 
@@ -88,16 +101,19 @@ html {
 .motion-hero-mockup {
   animation:
     landing-rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both,
-    hero-mockup-float 7s ease-in-out 1.1s infinite;
+    hero-mockup-float 5.4s ease-in-out 1.1s infinite;
+  will-change: transform;
 }
 
 .motion-device {
-  animation: device-tilt 8s ease-in-out infinite;
+  animation: device-tilt 6.6s ease-in-out infinite;
   transform-origin: 50% 70%;
+  will-change: transform;
 }
 
 .motion-floating-status {
-  animation: floating-status 5.8s ease-in-out infinite;
+  animation: floating-status 4.8s ease-in-out infinite;
+  will-change: transform;
 }
 
 .motion-floating-status:nth-of-type(4n + 1) {
@@ -127,7 +143,8 @@ html {
 }
 
 .motion-upload-card {
-  animation: upload-card-lift 5.8s ease-in-out infinite;
+  animation: upload-card-lift 4.8s ease-in-out infinite;
+  will-change: transform, box-shadow;
 }
 
 .motion-dashed-drop {
@@ -135,8 +152,9 @@ html {
 }
 
 .motion-photo-grid > * {
-  animation: photo-tile-pop 3.8s ease-in-out infinite;
+  animation: photo-tile-pop 3.2s ease-in-out infinite;
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .motion-photo-grid > *:nth-child(2) {
@@ -160,7 +178,7 @@ html {
 }
 
 .motion-live-badge {
-  animation: live-badge 2.6s ease-in-out infinite;
+  animation: live-badge 2.1s ease-in-out infinite;
 }
 
 .motion-panel-float,
@@ -187,7 +205,7 @@ html {
 }
 
 .motion-glow-button::after {
-  animation: button-sheen 3.4s ease-in-out infinite;
+  animation: button-sheen 2.4s ease-in-out infinite;
   background: linear-gradient(
     115deg,
     transparent 0%,
@@ -199,6 +217,10 @@ html {
   pointer-events: none;
   position: absolute;
   transform: translateX(-65%) rotate(8deg);
+}
+
+.motion-glow-button:hover::after {
+  animation-duration: 1.3s;
 }
 
 .motion-glow-button-light::after {
@@ -284,13 +306,13 @@ html {
 
 @keyframes hero-photo-breathe {
   from {
-    filter: saturate(0.85) contrast(0.98);
-    transform: scale(1);
+    filter: saturate(0.85) contrast(0.98) brightness(0.92);
+    transform: scale(1) translate3d(0, 0, 0);
   }
 
   to {
-    filter: saturate(1) contrast(1.06);
-    transform: scale(1.06);
+    filter: saturate(1.08) contrast(1.08) brightness(1.02);
+    transform: scale(1.095) translate3d(-1.6rem, 0.8rem, 0);
   }
 }
 
@@ -300,7 +322,29 @@ html {
   }
 
   to {
-    background-position: 100% 46%;
+    background-position: 100% 42%;
+  }
+}
+
+@keyframes spark-field-drift {
+  from {
+    background-position:
+      0 0,
+      5rem 2rem,
+      9rem 4rem,
+      2rem 8rem,
+      7rem 10rem;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    background-position:
+      18rem 12rem,
+      22rem 14rem,
+      27rem 18rem,
+      20rem 24rem,
+      25rem 26rem;
+    transform: translate3d(-1.4rem, 0.8rem, 0);
   }
 }
 
@@ -340,33 +384,37 @@ html {
 @keyframes hero-mockup-float {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(-0.4deg);
   }
 
   50% {
-    transform: translate3d(0, -14px, 0);
+    transform: translate3d(0, -22px, 0) rotate(1.2deg);
   }
 }
 
 @keyframes device-tilt {
   0%,
   100% {
-    transform: rotate(-0.8deg);
+    transform: rotateX(0deg) rotateY(-1.4deg) rotate(-0.8deg) translate3d(0, 0, 0);
   }
 
-  50% {
-    transform: rotate(1deg);
+  45% {
+    transform: rotateX(2.2deg) rotateY(-4.6deg) rotate(1deg) translate3d(0, -12px, 0);
+  }
+
+  72% {
+    transform: rotateX(-1.2deg) rotateY(2.4deg) rotate(-0.2deg) translate3d(0, -4px, 0);
   }
 }
 
 @keyframes floating-status {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 
   50% {
-    transform: translate3d(0, -10px, 0);
+    transform: translate3d(0, -18px, 0) scale(1.025);
   }
 }
 
@@ -414,11 +462,13 @@ html {
 @keyframes upload-card-lift {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    box-shadow: 0 18px 60px rgba(38, 31, 45, 0.16);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 
   50% {
-    transform: translate3d(0, -5px, 0);
+    box-shadow: 0 28px 78px rgba(240, 111, 79, 0.24);
+    transform: translate3d(0, -12px, 0) scale(1.012);
   }
 }
 
@@ -438,11 +488,13 @@ html {
 @keyframes photo-tile-pop {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.76;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
   }
 
   45% {
-    transform: translate3d(0, -4px, 0) scale(1.025);
+    opacity: 1;
+    transform: translate3d(0, -8px, 0) scale(1.045) rotate(-0.7deg);
   }
 }
 
@@ -485,12 +537,12 @@ html {
 
 @keyframes button-sheen {
   0%,
-  45% {
+  30% {
     transform: translateX(-65%) rotate(8deg);
   }
 
   100% {
-    transform: translateX(65%) rotate(8deg);
+    transform: translateX(82%) rotate(8deg);
   }
 }
 

@@ -9,7 +9,6 @@ import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   getEventMediaStorageBytes,
   getEventByPublicIdAndSlug,
-  getEventBySlug,
   getOrCreateGuest,
 } from "@/lib/supabase";
 
@@ -27,6 +26,7 @@ export async function POST(request: Request) {
 
     if (
       typeof eventSlug !== "string" ||
+      typeof publicId !== "string" ||
       typeof guestToken !== "string" ||
       typeof fileName !== "string" ||
       typeof mimeType !== "string" ||
@@ -35,15 +35,12 @@ export async function POST(request: Request) {
       return Response.json({ error: "Dados de upload inválidos." }, { status: 400 });
     }
 
-    const validation = validateMediaFile(mimeType, fileSize);
+    const validation = validateMediaFile(mimeType, fileSize, fileName);
     if (!validation.ok) {
       return Response.json({ error: validation.message }, { status: 400 });
     }
 
-    const foundEvent =
-      typeof publicId === "string" && publicId
-        ? await getEventByPublicIdAndSlug(publicId, eventSlug)
-        : await getEventBySlug(eventSlug);
+    const foundEvent = await getEventByPublicIdAndSlug(publicId, eventSlug);
     if (!foundEvent) {
       return Response.json({ error: "Evento não encontrado." }, { status: 404 });
     }
@@ -74,7 +71,7 @@ export async function POST(request: Request) {
       mediaId,
       fileName,
     });
-    const uploadUrl = await createUploadUrl(s3Key, mimeType);
+    const uploadUrl = await createUploadUrl(s3Key, validation.mimeType);
 
     return Response.json({ uploadUrl, s3Key, mediaId });
   } catch (error) {

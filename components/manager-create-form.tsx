@@ -18,6 +18,7 @@ import { useState } from "react";
 
 import { showToast } from "@/components/app-toast";
 import { authFetch, readApiError } from "@/components/auth-client";
+import { validatePasswordStrength } from "@/lib/password";
 
 export function ManagerCreateForm() {
   const [name, setName] = useState("");
@@ -30,8 +31,16 @@ export function ManagerCreateForm() {
     const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!normalizedName || !normalizedEmail || password.length < 6) {
-      showToast({ type: "error", message: "Informe nome, e-mail e senha com pelo menos 6 caracteres." });
+    const passwordValidation = validatePasswordStrength(password);
+
+    if (!normalizedName || !normalizedEmail || !passwordValidation.ok) {
+      showToast({
+        type: "error",
+        message:
+          normalizedName && normalizedEmail
+            ? passwordValidation.message
+            : "Informe nome e e-mail.",
+      });
       return;
     }
 

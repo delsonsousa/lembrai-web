@@ -21,7 +21,7 @@ import {
   Video,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { showToast } from '@/components/app-toast';
@@ -157,16 +157,18 @@ async function signGuestMediaUrl(
   guestToken: string,
   publicId?: string,
 ): Promise<MediaWithUrl> {
-  const publicQuery = publicId
-    ? `&publicId=${encodeURIComponent(publicId)}`
-    : '';
-  const response = await fetch(
-    `/api/media/signed-url?s3Key=${encodeURIComponent(
-      item.s3Key,
-    )}&eventSlug=${encodeURIComponent(eventSlug)}&guestToken=${encodeURIComponent(
+  if (!publicId) return item;
+
+  const response = await fetch('/api/media/signed-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      s3Key: item.s3Key,
+      eventSlug,
+      publicId,
       guestToken,
-    )}${publicQuery}`,
-  );
+    }),
+  });
 
   if (!response.ok) return item;
 
@@ -177,6 +179,7 @@ async function signGuestMediaUrl(
 export function GuestAlbum({ event }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const removalTimersRef = useRef<Map<string, number>>(new Map());
+  const scheduledUploadIdsRef = useRef<Set<string>>(new Set());
   const [guestToken, setGuestToken] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaWithUrl[]>([]);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
@@ -215,9 +218,7 @@ export function GuestAlbum({ event }: Props) {
   const remainingMediaCount = Math.max(media.length - visibleMedia.length, 0);
   const activeUploadItems = useMemo(
     () =>
-      uploads.filter(
-        (item) => item.status === 'queued' || item.status === 'uploading',
-      ),
+      uploads.filter((item) => item.status === 'uploading'),
     [uploads],
   );
   const uploadDockItems = useMemo(
@@ -275,7 +276,7 @@ export function GuestAlbum({ event }: Props) {
     }
 
     if (fileList) {
-      void processFiles(fileList, true);
+      processFiles(fileList);
       return;
     }
 
@@ -290,7 +291,7 @@ export function GuestAlbum({ event }: Props) {
     setPendingFiles(null);
 
     if (filesToProcess?.length) {
-      void processFiles(filesToProcess, true);
+      processFiles(filesToProcess);
       return;
     }
 
@@ -313,11 +314,15 @@ export function GuestAlbum({ event }: Props) {
       setLoading(true);
 
       try {
-        const response = await fetch(
-          `/api/media/my?eventSlug=${encodeURIComponent(
-            event.slug,
-          )}&guestToken=${encodeURIComponent(loadedGuestToken)}`,
-        );
+        const response = await fetch('/api/media/my', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventSlug: event.slug,
+            publicId: eventPublicId,
+            guestToken: loadedGuestToken,
+          }),
+        });
 
         if (!response.ok) {
           throw new Error(
@@ -362,20 +367,22 @@ export function GuestAlbum({ event }: Props) {
 
   useEffect(() => {
     const removalTimers = removalTimersRef.current;
+    const scheduledUploadIds = scheduledUploadIdsRef.current;
 
     return () => {
       removalTimers.forEach((timer) => window.clearTimeout(timer));
       removalTimers.clear();
+      scheduledUploadIds.clear();
     };
   }, []);
 
-  function updateUpload(id: string, patch: Partial<UploadItem>) {
+  const updateUpload = useCallback((id: string, patch: Partial<UploadItem>) => {
     setUploads((current) =>
       current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
-  }
+  }, []);
 
-  function scheduleUploadRemoval(id: string) {
+  const scheduleUploadRemoval = useCallback((id: string) => {
     const existingTimer = removalTimersRef.current.get(id);
     if (existingTimer) window.clearTimeout(existingTimer);
 
@@ -387,13 +394,13 @@ export function GuestAlbum({ event }: Props) {
     }, 5_000);
 
     removalTimersRef.current.set(id, timer);
-  }
+  }, []);
 
-  async function uploadFile(
+  const uploadFile = useCallback(async (
     file: File,
     existingUploadId?: string,
     privacyConfirmed = privacyAccepted,
-  ) {
+  ) => {
     const uploadId = existingUploadId ?? crypto.randomUUID();
 
     if (existingUploadId) {
@@ -449,6 +456,7 @@ export function GuestAlbum({ event }: Props) {
       const validation = validateMediaFile(
         uploadFileToSend.type,
         uploadFileToSend.size,
+        uploadFileToSend.name,
       );
       if (!validation.ok) throw new Error(validation.message);
 
@@ -533,10 +541,55 @@ export function GuestAlbum({ event }: Props) {
             : 'Não foi possível enviar este arquivo.',
       });
     }
-  }
+  }, [
+    event.slug,
+    eventPublicId,
+    guestToken,
+    privacyAccepted,
+    scheduleUploadRemoval,
+    updateUpload,
+  ]);
+
+  useEffect(() => {
+    const uploadingCount = uploads.filter(
+      (item) => item.status === 'uploading',
+    ).length;
+    const availableSlots = Math.max(MAX_CONCURRENT_UPLOADS - uploadingCount, 0);
+    if (availableSlots === 0) return;
+
+    const nextItems = uploads
+      .filter(
+        (item) =>
+          item.status === 'queued' &&
+          !scheduledUploadIdsRef.current.has(item.id),
+      )
+      .slice(0, availableSlots);
+    if (!nextItems.length) return;
+
+    const nextIds = new Set(nextItems.map((item) => item.id));
+    nextItems.forEach((item) => scheduledUploadIdsRef.current.add(item.id));
+
+    setUploads((current) =>
+      current.map((item) =>
+        nextIds.has(item.id)
+          ? { ...item, progress: 0, status: 'uploading', error: undefined }
+          : item,
+      ),
+    );
+
+    nextItems.forEach((item) => {
+      void uploadFile(item.file, item.id, true).finally(() => {
+        scheduledUploadIdsRef.current.delete(item.id);
+      });
+    });
+  }, [uploads, uploadFile]);
 
   function retryUpload(item: UploadItem) {
-    void uploadFile(item.file, item.id, true);
+    updateUpload(item.id, {
+      progress: 0,
+      status: 'queued',
+      error: undefined,
+    });
   }
 
   async function deleteItem(item: MediaDto) {
@@ -586,10 +639,7 @@ export function GuestAlbum({ event }: Props) {
     }
   }
 
-  async function processFiles(
-    files: File[],
-    privacyConfirmed = privacyAccepted,
-  ) {
+  function processFiles(files: File[]) {
     if (!files.length) return;
 
     setUploadDockExpanded(false);
@@ -602,23 +652,7 @@ export function GuestAlbum({ event }: Props) {
       status: 'queued' as const,
     }));
 
-    setUploads((current) => [...queuedUploads, ...current]);
-
-    let nextIndex = 0;
-    async function uploadNextQueuedFile() {
-      while (nextIndex < queuedUploads.length) {
-        const item = queuedUploads[nextIndex];
-        nextIndex += 1;
-        await uploadFile(item.file, item.id, privacyConfirmed);
-      }
-    }
-
-    await Promise.all(
-      Array.from(
-        { length: Math.min(MAX_CONCURRENT_UPLOADS, queuedUploads.length) },
-        uploadNextQueuedFile,
-      ),
-    );
+    setUploads((current) => [...current, ...queuedUploads]);
 
     if (inputRef.current) inputRef.current.value = '';
   }
@@ -636,7 +670,7 @@ export function GuestAlbum({ event }: Props) {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,19,29,0.74)_0%,rgba(24,19,29,0.94)_66%,#18131d_100%)]" />
         </div>
 
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-7 pt-4 sm:px-6 lg:px-8 lg:pb-10">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-7 pt-4 sm:px-6 lg:px-8 lg:pb-10">
           <div className="flex animate-[landing-rise_620ms_ease-out_both] items-center justify-between gap-3">
             <div className="h-8 w-24">
               <BrandLogo
@@ -668,7 +702,7 @@ export function GuestAlbum({ event }: Props) {
                 ref={inputRef}
                 className="sr-only"
                 type="file"
-                accept="image/heic,image/heif,.heic,.heif,image/*,video/*"
+                accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.mp4,.mov,.webm,image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm"
                 multiple
                 onChange={(event) => handleFiles(event.target.files)}
               />
@@ -856,7 +890,7 @@ export function GuestAlbum({ event }: Props) {
           </div>
         </div>
       </section>
-      {typeof document !== 'undefined' && activeUploadItems.length > 0
+      {typeof document !== 'undefined' && uploadDockItems.length > 0
         ? createPortal(
             <UploadDock
               activeItems={activeUploadItems}
@@ -1040,12 +1074,15 @@ function UploadDock({
   const uploadingCount = activeItems.filter(
     (item) => item.status === 'uploading',
   ).length;
-  const queuedCount = activeItems.filter(
+  const queuedCount = items.filter(
     (item) => item.status === 'queued',
   ).length;
+  const errorCount = items.filter((item) => item.status === 'error').length;
+  const hasActiveUploads = activeItems.length > 0;
+  const hasQueuedUploads = queuedCount > 0;
   const averageProgress = Math.round(
     activeItems.reduce(
-      (total, item) => total + (item.status === 'queued' ? 0 : item.progress),
+      (total, item) => total + item.progress,
       0,
     ) / Math.max(activeItems.length, 1),
   );
@@ -1064,27 +1101,56 @@ function UploadDock({
         <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#261f2d] text-white shadow-[0_14px_34px_rgba(38,31,45,0.18)]">
           <UploadCloud className="h-5 w-5" />
           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f06f4f] px-1 text-[10px] font-bold">
-            {activeItems.length}
+            {items.length}
           </span>
         </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <p className="truncate font-semibold">
-              Enviando {activeItems.length} arquivo(s)
+              {hasActiveUploads
+                ? `Enviando ${activeItems.length} arquivo(s)`
+                : hasQueuedUploads
+                  ? `${queuedCount} arquivo(s) em espera`
+                  : `${errorCount} arquivo(s) com erro`}
             </p>
-            <span className="shrink-0 text-xs font-semibold text-[#245b3c]">
-              {averageProgress}%
+            <span
+              className={`shrink-0 text-xs font-semibold ${
+                hasActiveUploads
+                  ? 'text-[#245b3c]'
+                  : hasQueuedUploads
+                    ? 'text-[#6d5f58]'
+                    : 'text-[#b42318]'
+              }`}
+            >
+              {hasActiveUploads
+                ? `${averageProgress}%`
+                : hasQueuedUploads
+                  ? 'Fila'
+                  : 'Erro'}
             </span>
           </div>
           <p className="mt-0.5 truncate text-xs text-[#7a6c62]">
-            {uploadingCount} ativo(s) · {queuedCount} na fila · até{' '}
-            {MAX_CONCURRENT_UPLOADS} por vez
+            {hasActiveUploads
+              ? `${uploadingCount} ativo(s) · ${queuedCount} em espera${
+                  errorCount > 0 ? ` · ${errorCount} com erro` : ''
+                } · até ${MAX_CONCURRENT_UPLOADS} por vez`
+              : hasQueuedUploads
+                ? 'Aguardando vaga para iniciar'
+                : 'Aguardando nova tentativa'}
           </p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#eadfd5]">
             <div
-              className="h-full rounded-full bg-[#245b3c] transition-[width]"
-              style={{ width: `${averageProgress}%` }}
+              className={`h-full rounded-full transition-[width,background-color] ${
+                hasActiveUploads
+                  ? 'bg-[#245b3c]'
+                  : hasQueuedUploads
+                    ? 'bg-[#d8c8bb]'
+                    : 'bg-[#d92d20]'
+              }`}
+              style={{
+                width: `${hasActiveUploads ? averageProgress : hasQueuedUploads ? 8 : 100}%`,
+              }}
             />
           </div>
         </div>
@@ -1101,10 +1167,15 @@ function UploadDock({
       {expanded ? (
         <div className="max-h-[min(22rem,56svh)] overflow-y-auto border-t border-[#eadfd5] p-3 [scrollbar-width:thin]">
           <div className="grid gap-2">
-            {items.map((item) => (
+            {items.slice(0, 8).map((item) => (
               <UploadRow key={item.id} item={item} onRetry={onRetry} />
             ))}
           </div>
+          {items.length > 8 ? (
+            <p className="mt-3 rounded-2xl bg-[#f2eadf] px-3 py-2 text-center text-xs font-semibold text-[#6d5f58]">
+              +{items.length - 8} arquivo(s) continuam na fila.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </section>

@@ -1,4 +1,10 @@
-import { getAppUrl, getStripe } from "@/lib/stripe";
+import {
+  LEMBRAI_SUBSCRIPTION_AMOUNT_CENTS,
+  LEMBRAI_SUBSCRIPTION_CURRENCY,
+  getAppUrl,
+  getStripe,
+  getStripeSubscriptionPriceId,
+} from "@/lib/stripe";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -17,28 +23,35 @@ export async function POST(request: Request) {
   try {
     const appUrl = getAppUrl();
     const stripe = getStripe();
+    const priceId = getStripeSubscriptionPriceId();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [
-        {
-          price_data: {
-            currency: "brl",
-            unit_amount: 19900,
-            product_data: {
-              name: "Lembraí",
-              description:
-                "1 evento com QR Code exclusivo, fotos e vídeos, álbum privado e armazenamento por 12 meses",
+        priceId
+          ? {
+              price: priceId,
+              quantity: 1,
+            }
+          : {
+              price_data: {
+                currency: LEMBRAI_SUBSCRIPTION_CURRENCY,
+                unit_amount: LEMBRAI_SUBSCRIPTION_AMOUNT_CENTS,
+                product_data: {
+                  name: "Lembraí",
+                  description:
+                    "Acesso a eventos com QR Code exclusivo, fotos e vídeos, álbum privado e armazenamento por 12 meses",
+                },
+              },
+              quantity: 1,
             },
-          },
-          quantity: 1,
-        },
       ],
+      allow_promotion_codes: true,
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/checkout`,
       metadata: {
         plan: "lembrai",
-        billing_model: "one_time_event",
+        billing_model: "one_time",
       },
     });
 

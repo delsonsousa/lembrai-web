@@ -46,13 +46,18 @@ export async function createUploadUrl(s3Key: string, mimeType: string) {
 }
 
 export async function createReadUrl(s3Key: string, fileName?: string) {
+  const safeFileName = fileName
+    ?.replace(/[\r\n]/g, "")
+    .replaceAll('"', "")
+    .slice(0, 180);
+
   return getSignedUrl(
     getS3Client(),
     new GetObjectCommand({
       Bucket: getS3Bucket(),
       Key: s3Key,
-      ResponseContentDisposition: fileName
-        ? `attachment; filename="${fileName.replaceAll('"', "")}"`
+      ResponseContentDisposition: safeFileName
+        ? `attachment; filename="${safeFileName}"`
         : undefined,
     }),
     { expiresIn: 15 * 60 }
@@ -66,6 +71,42 @@ export async function getObjectMetadata(s3Key: string) {
       Key: s3Key,
     })
   );
+}
+
+async function streamToBytes(stream: unknown) {
+  if (!stream || typeof stream !== "object") return new Uint8Array();
+
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of stream as AsyncIterable<Uint8Array | Buffer | string>) {
+    if (typeof chunk === "string") {
+      chunks.push(new TextEncoder().encode(chunk));
+    } else {
+      chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
+    }
+  }
+
+  const totalLength = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const bytes = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  return bytes;
+}
+
+export async function getObjectPrefixBytes(s3Key: string, byteCount = 4096) {
+  const response = await getS3Client().send(
+    new GetObjectCommand({
+      Bucket: getS3Bucket(),
+      Key: s3Key,
+      Range: `bytes=0-${Math.max(byteCount - 1, 0)}`,
+    })
+  );
+
+  return streamToBytes(response.Body);
 }
 
 export async function deleteObject(s3Key: string) {

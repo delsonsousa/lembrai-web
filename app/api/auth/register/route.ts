@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { publicIdFromUserId } from "@/lib/public-id";
 import { isPurchaseActive } from "@/lib/auth";
 import { sendVerificationCodeEmail } from "@/lib/email";
+import { validatePasswordStrength } from "@/lib/password";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   generateVerificationCode,
@@ -27,11 +28,15 @@ export async function POST(request: Request) {
     const termsAccepted = body.termsAccepted === true;
     const marketingOptIn = body.marketingOptIn === true;
 
-    if (!name || !email || password.length < 6 || !termsAccepted) {
+    const passwordValidation = validatePasswordStrength(password);
+
+    if (!name || !email || !passwordValidation.ok || !termsAccepted) {
       return Response.json(
         {
           error:
-            "Informe nome, e-mail, senha com pelo menos 6 caracteres e aceite os termos.",
+            passwordValidation.ok
+              ? "Informe nome, e-mail e aceite os termos."
+              : passwordValidation.message,
         },
         { status: 400 }
       );
@@ -42,7 +47,6 @@ export async function POST(request: Request) {
       .from("purchases")
       .select("*")
       .eq("status", "paid")
-      .eq("source", "stripe")
       .ilike("customer_email", email)
       .limit(25);
 
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
     const { error: profileError } = await supabase.from("profiles").upsert(
       {
         id: userData.user.id,
-        public_id: publicIdFromUserId(userData.user.id),
+        public_id: publicIdFromUserId(),
         name,
         email,
         role: "manager",

@@ -17,9 +17,26 @@ export async function GET(request: Request) {
   }
 
   const { auth } = result;
-  const access = isManagerRole(auth.profile.role)
-    ? await getManagerAccessStatus(auth)
-    : null;
+  let access = null;
+
+  if (isManagerRole(auth.profile.role)) {
+    try {
+      access = await getManagerAccessStatus(auth);
+    } catch (error) {
+      console.error("auth access check error", error);
+      return Response.json(
+        {
+          user: {
+            id: auth.userId,
+            email: auth.email,
+          },
+          profile: toProfileDto(auth.profile),
+          code: "ACCESS_CHECK_FAILED",
+        },
+        { status: 500 }
+      );
+    }
+  }
 
   return Response.json({
     user: {

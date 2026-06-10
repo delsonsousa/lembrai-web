@@ -1,4 +1,5 @@
 import { requireAuth } from "@/lib/auth";
+import { validatePasswordStrength } from "@/lib/password";
 import { publicIdFromUserId } from "@/lib/public-id";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { toProfileDto } from "@/lib/types";
@@ -21,11 +22,15 @@ export async function POST(request: Request) {
     const indefiniteAccess = body.indefiniteAccess === true;
     const expiresAt = indefiniteAccess ? null : parseExpiresAt(body.accessExpiresAt);
 
-    if (!name || !email || password.length < 6) {
+    const passwordValidation = validatePasswordStrength(password);
+
+    if (!name || !email || !passwordValidation.ok) {
       return Response.json(
         {
           error:
-            "Informe nome, e-mail e senha com pelo menos 6 caracteres.",
+            passwordValidation.ok
+              ? "Informe nome e e-mail."
+              : passwordValidation.message,
         },
         { status: 400 }
       );
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
       .from("profiles")
       .insert({
         id: userData.user.id,
-        public_id: publicIdFromUserId(userData.user.id),
+        public_id: publicIdFromUserId(),
         name,
         email,
         role: "manager",

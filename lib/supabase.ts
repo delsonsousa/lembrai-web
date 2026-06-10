@@ -39,19 +39,6 @@ export function getSupabasePublicConfig() {
   };
 }
 
-export async function getEventBySlug(slug: string) {
-  const { data, error } = await getSupabaseAdmin()
-    .from("events")
-    .select("*")
-    .eq("slug", slug)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as EventRecord | null;
-}
-
 export async function getEventByManagerIdAndSlug(managerId: string, slug: string) {
   const { data, error } = await getSupabaseAdmin()
     .from("events")

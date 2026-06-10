@@ -139,10 +139,11 @@ export function ManagerEventPanel({ eventSlug }: { eventSlug: string }) {
   useEffect(() => {
     if (!event) return;
     const timer = window.setTimeout(() => {
-      const publicPath = event.managerPublicId
-        ? `/${event.managerPublicId}/e/${eventSlug}`
-        : `/e/${eventSlug}`;
-      setEventLink(`${window.location.origin}${publicPath}`);
+      setEventLink(
+        event.managerPublicId
+          ? `${window.location.origin}/${event.managerPublicId}/e/${eventSlug}`
+          : ""
+      );
     }, 0);
     return () => window.clearTimeout(timer);
   }, [event, eventSlug]);
@@ -465,7 +466,7 @@ export function ManagerEventPanel({ eventSlug }: { eventSlug: string }) {
                   )}
                 </div>
                 <p className="mt-4 break-all rounded-2xl bg-[#f2eadf] p-3 font-mono text-xs leading-5 text-[#6d5f58]">
-                  {eventLink || `/e/${eventSlug}`}
+                  {eventLink || "Link público indisponível"}
                 </p>
                 <div className="mt-4 grid gap-2">
                   <button

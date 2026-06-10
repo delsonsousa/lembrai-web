@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { showToast } from '@/components/app-toast';
 import { authFetch } from '@/components/auth-client';
+import { validatePasswordStrength } from '@/lib/password';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import type {
   EventDto,
@@ -163,8 +164,9 @@ export function AccountSettings() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      showToast({ type: 'error', message: 'A nova senha precisa ter pelo menos 6 caracteres.' });
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.ok) {
+      showToast({ type: 'error', message: passwordValidation.message });
       return;
     }
 

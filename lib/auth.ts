@@ -115,7 +115,6 @@ export async function linkPaidPurchasesToUser(userId: string, email: string) {
     .update({ user_id: userId })
     .is("user_id", null)
     .eq("status", "paid")
-    .eq("source", "stripe")
     .ilike("customer_email", normalizedEmail);
 
   if (error) throw error;

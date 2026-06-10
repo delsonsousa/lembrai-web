@@ -152,7 +152,9 @@ export function AdminUserDetail({ userId }: { userId: string }) {
                   className="block rounded-2xl bg-[#fffaf3] p-4 transition hover:bg-white"
                 >
                   <p className="font-semibold">{event.name}</p>
-                  <p className="mt-1 font-mono text-sm text-[#75675f]">/e/{event.slug}</p>
+                  <p className="mt-1 font-mono text-sm text-[#75675f]">
+                    /{detail.user.publicId ?? "public-id"}/e/{event.slug}
+                  </p>
                 </Link>
               ))
             ) : (

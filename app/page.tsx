@@ -22,12 +22,13 @@ export default function Home() {
       <section className="relative overflow-hidden bg-[#211927]">
         <div className="motion-hero-photo absolute inset-0 bg-[url('/images/lembrai-hero.png')] bg-cover bg-center opacity-55 saturate-[0.85]" />
         <div className="motion-gradient-drift absolute inset-0 bg-[radial-gradient(circle_at_72%_24%,rgba(255,215,164,0.22),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(240,111,79,0.30),transparent_32%),linear-gradient(90deg,rgba(22,16,27,1)_0%,rgba(34,25,41,0.98)_38%,rgba(38,31,45,0.78)_63%,rgba(38,31,45,0.34)_100%)]" />
+        <div className="motion-spark-field absolute inset-0" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,12,22,0.12)_0%,rgba(18,12,22,0.08)_46%,rgba(18,12,22,0.92)_100%)]" />
         <div className="motion-ambient-one absolute left-[-10rem] top-[-10rem] h-[32rem] w-[32rem] rounded-full bg-[#f06f4f]/20 blur-[140px]" />
         <div className="motion-ambient-two absolute right-[8%] top-[18%] h-[28rem] w-[28rem] rounded-full bg-[#ffd7a4]/14 blur-[130px]" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#211927]/82 to-[#f6efe7]" />
 
-        <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
           <nav className="motion-rise motion-delay-1 flex items-center justify-between">
             <Link
               className="inline-flex h-10 w-32 items-center transition hover:opacity-85 focus:outline-none focus:ring-4 focus:ring-white/18"

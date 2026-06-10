@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "@/components/app-toast";
 import { authFetch, readApiError } from "@/components/auth-client";
 import { AdminDashboardLoadingState } from "@/components/premium-loading-states";
+import { validatePasswordStrength } from "@/lib/password";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import type { EventDto, ProfileDto, ProfileRole } from "@/lib/types";
 
@@ -662,8 +663,9 @@ function AdminAccountPanel({
       return;
     }
 
-    if (newPassword.length < 6) {
-      showToast({ type: "error", message: "A nova senha precisa ter pelo menos 6 caracteres." });
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.ok) {
+      showToast({ type: "error", message: passwordValidation.message });
       return;
     }
 
@@ -853,8 +855,16 @@ function CreateAccessCard({ onCreated }: { onCreated: () => Promise<void> }) {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedName = name.trim();
 
-    if (!normalizedName || !normalizedEmail || password.length < 6) {
-      showToast({ type: "error", message: "Informe nome, e-mail e senha com pelo menos 6 caracteres." });
+    const passwordValidation = validatePasswordStrength(password);
+
+    if (!normalizedName || !normalizedEmail || !passwordValidation.ok) {
+      showToast({
+        type: "error",
+        message:
+          normalizedName && normalizedEmail
+            ? passwordValidation.message
+            : "Informe nome e e-mail.",
+      });
       return;
     }
 
@@ -1084,7 +1094,7 @@ function EventRow({
             <StatusBadge status={event.status} />
           </div>
           <p className="mt-1 truncate font-mono text-sm text-[#75675f]">
-            /e/{event.slug}
+            /{event.managerPublicId ?? "public-id"}/e/{event.slug}
           </p>
           {detailed ? (
             <div className="mt-3 grid gap-2 text-sm text-[#75675f] sm:grid-cols-2 lg:grid-cols-4">

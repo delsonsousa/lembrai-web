@@ -344,7 +344,7 @@ export function ManagerEventCreateForm() {
                 {name.trim() || "Nome da festa"}
               </h2>
               <p className="mt-3 truncate font-mono text-sm text-white/48">
-                /e/{previewSlug}
+                /seu-link/e/{previewSlug}
               </p>
             </div>
 
