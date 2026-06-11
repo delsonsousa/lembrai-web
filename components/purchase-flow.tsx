@@ -1,9 +1,9 @@
 import { BadgeCheck, CreditCard, KeyRound, LayoutDashboard, MailCheck } from "lucide-react";
 
 const steps = [
-  { label: "Pagamento", icon: CreditCard },
   { label: "Cadastro", icon: KeyRound },
   { label: "Verificação", icon: MailCheck },
+  { label: "Pagamento", icon: CreditCard },
   { label: "Painel", icon: LayoutDashboard },
 ];
 

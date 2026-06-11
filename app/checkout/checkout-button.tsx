@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 import { showToast } from "@/components/app-toast";
+import { authFetch } from "@/components/auth-client";
 
 type CheckoutResponse = {
+  error?: string;
   url?: string;
+  redirectTo?: string;
 };
 
 export function CheckoutButton() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleCheckout() {
@@ -18,21 +23,39 @@ export function CheckoutButton() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/checkout/create-session", {
+      const response = await authFetch("/api/checkout/create-session", {
         method: "POST",
       });
       const data = (await response.json().catch(() => ({}))) as CheckoutResponse;
 
       if (!response.ok || !data.url) {
-        throw new Error("Não foi possível iniciar o pagamento. Tente novamente.");
+        if (data.redirectTo) {
+          router.push(data.redirectTo);
+          return;
+        }
+
+        throw new Error(
+          data.error ?? "Não foi possível iniciar o pagamento. Tente novamente."
+        );
       }
 
       window.location.href = data.url;
     } catch (checkoutError) {
       console.error("checkout redirect error", checkoutError);
+      const message =
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : "Não foi possível iniciar o pagamento. Tente novamente.";
+
+      if (message === "Faça login para continuar.") {
+        showToast({ type: "error", message: "Faça login para continuar o pagamento." });
+        router.push("/login");
+        return;
+      }
+
       showToast({
         type: "error",
-        message: "Não foi possível iniciar o pagamento. Tente novamente.",
+        message,
       });
       setIsLoading(false);
     }

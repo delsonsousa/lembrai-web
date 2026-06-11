@@ -36,6 +36,10 @@ type DashboardResponse = {
 
 const STORAGE_MONTHS = 12;
 
+function isManagerProfile(profile: ProfileDto | null | undefined) {
+  return profile?.role === 'manager' || profile?.role === 'event_manager';
+}
+
 function addMonths(date: Date, months: number) {
   const copy = new Date(date);
   copy.setMonth(copy.getMonth() + months);
@@ -71,7 +75,10 @@ export function AccountSettings() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -80,15 +87,24 @@ export function AccountSettings() {
 
     async function loadAccount() {
       try {
-        const [meResponse, eventsResponse] = await Promise.all([
-          authFetch('/api/auth/me'),
-          authFetch('/api/dashboard/events'),
-        ]);
+        const meResponse = await authFetch('/api/auth/me');
 
         if (!meResponse.ok) {
           router.replace('/login');
           return;
         }
+
+        const meBody = (await meResponse.json()) as MeResponse;
+
+        if (!cancelled) {
+          setMe(meBody);
+          setProfileName(meBody.profile.name ?? '');
+          setMarketingOptIn(meBody.profile.marketingOptIn);
+        }
+
+        if (!isManagerProfile(meBody.profile)) return;
+
+        const eventsResponse = await authFetch('/api/dashboard/events');
 
         if (!eventsResponse.ok) {
           const body = (await eventsResponse.json().catch(() => null)) as {
@@ -96,27 +112,28 @@ export function AccountSettings() {
             error?: string;
           } | null;
 
-          if (body?.redirectTo) {
-            router.replace(body.redirectTo);
-            return;
-          }
-
-          throw new Error(
-            body?.error ?? 'Não foi possível carregar sua conta.',
+          console.info(
+            'account events unavailable',
+            body?.error ?? 'Eventos indisponíveis para esta conta.',
           );
+          return;
         }
 
-        const [meBody, eventsBody] = await Promise.all([
-          meResponse.json() as Promise<MeResponse>,
-          eventsResponse.json() as Promise<DashboardResponse>,
-        ]);
+        const eventsBody = (await eventsResponse.json()) as DashboardResponse;
 
         if (!cancelled) {
-          setMe(meBody);
           setDashboard(eventsBody);
         }
       } catch (loadError) {
         if (!cancelled) {
+          if (
+            loadError instanceof Error &&
+            loadError.message === 'Faça login para continuar.'
+          ) {
+            router.replace('/login');
+            return;
+          }
+
           showToast({
             type: 'error',
             message:
@@ -201,6 +218,13 @@ export function AccountSettings() {
         throw new Error('Não foi possível atualizar sua senha agora.');
       }
 
+      await authFetch('/api/account/security-notification', {
+        method: 'POST',
+        body: JSON.stringify({ change: 'senha' }),
+      }).catch((notificationError) => {
+        console.error('password change notification error', notificationError);
+      });
+
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -215,6 +239,56 @@ export function AccountSettings() {
       });
     } finally {
       setSavingPassword(false);
+    }
+  }
+
+  async function updateProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = profileName.trim();
+
+    if (normalizedName.length < 2) {
+      showToast({
+        type: 'error',
+        message: 'Informe um nome com pelo menos 2 caracteres.',
+      });
+      return;
+    }
+
+    setSavingProfile(true);
+
+    try {
+      const response = await authFetch('/api/account/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: normalizedName,
+          marketingOptIn,
+        }),
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(body?.error ?? 'Não foi possível atualizar seus dados.');
+      }
+
+      const body = (await response.json()) as { profile: ProfileDto };
+      setMe((current) =>
+        current ? { ...current, profile: body.profile } : current,
+      );
+      setProfileName(body.profile.name ?? '');
+      setMarketingOptIn(body.profile.marketingOptIn);
+      showToast({ type: 'success', message: 'Dados atualizados.' });
+    } catch (profileError) {
+      showToast({
+        type: 'error',
+        message:
+          profileError instanceof Error
+            ? profileError.message
+            : 'Não foi possível atualizar seus dados.',
+      });
+    } finally {
+      setSavingProfile(false);
     }
   }
 
@@ -234,6 +308,23 @@ export function AccountSettings() {
     );
   }
 
+  if (!me) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f6efe7] text-[#261f2d]">
+        <div className="rounded-[28px] bg-white/80 p-6 shadow-[0_24px_80px_rgba(38,31,45,0.12)]">
+          <Loader2 className="h-6 w-6 animate-spin text-[#f06f4f]" />
+        </div>
+      </main>
+    );
+  }
+
+  const isManager = isManagerProfile(me.profile);
+  const backHref = me.profile.role === 'platform_admin' ? '/admin' : '/dashboard';
+  const backLabel =
+    me.profile.role === 'platform_admin'
+      ? 'Voltar ao admin'
+      : 'Voltar ao dashboard';
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f6efe7] text-[#261f2d]">
       <div className="absolute left-[-18rem] top-[-18rem] h-[46rem] w-[46rem] rounded-full bg-[#f06f4f]/14 blur-[160px]" />
@@ -246,21 +337,21 @@ export function AccountSettings() {
             <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <Link
-                  href="/dashboard"
+                  href={backHref}
                   className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-semibold text-white/72 transition hover:bg-white/12 hover:text-white"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Voltar ao dashboard
+                  {backLabel}
                 </Link>
                 <p className="mt-7 text-sm font-semibold uppercase tracking-[0.26em] text-[#ffd7a4]">
-                  Conta do organizador
+                  Conta de acesso
                 </p>
                 <h1 className="mt-3 text-5xl font-semibold tracking-[-0.055em]">
                   Segurança e acesso.
                 </h1>
                 <p className="mt-4 max-w-2xl text-lg leading-8 text-white/62">
-                  Gerencie sua senha, encerre a sessão e acompanhe os prazos de
-                  retenção dos eventos comprados no Lembraí.
+                  Gerencie seus dados, sua senha e a sessão usada para acessar o
+                  Lembraí.
                 </p>
               </div>
 
@@ -282,15 +373,27 @@ export function AccountSettings() {
         </header>
 
         <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-[34px] border border-white/80 bg-white/76 p-6 shadow-[0_26px_80px_rgba(38,31,45,0.10)] backdrop-blur-xl">
+          <form
+            onSubmit={updateProfile}
+            noValidate
+            className="rounded-[34px] border border-white/80 bg-white/76 p-6 shadow-[0_26px_80px_rgba(38,31,45,0.10)] backdrop-blur-xl"
+          >
             <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#eff8ed] text-[#245b3c]">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <h2 className="mt-5 text-3xl font-semibold tracking-[-0.045em]">
               Dados da conta
             </h2>
-            <div className="mt-6 grid gap-3">
-              <InfoRow label="Nome" value={me?.profile.name ?? 'Organizador'} />
+            <div className="mt-6 grid gap-4">
+              <label className="grid gap-2 text-sm font-semibold text-[#46394e]">
+                Nome
+                <input
+                  className="h-13 rounded-[18px] border border-[#eadfd2] bg-[#fffaf3] px-4 text-base font-semibold outline-none transition focus:border-[#f06f4f]/60 focus:bg-white focus:ring-4 focus:ring-[#f06f4f]/10"
+                  value={profileName}
+                  onChange={(event) => setProfileName(event.target.value)}
+                  autoComplete="name"
+                />
+              </label>
               <InfoRow label="E-mail" value={me?.user.email ?? '-'} />
               <InfoRow
                 label="Status"
@@ -298,8 +401,32 @@ export function AccountSettings() {
                   me?.profile.emailVerified ? 'E-mail confirmado' : 'Pendente'
                 }
               />
+              <label className="flex items-start gap-3 rounded-[20px] border border-[#eadfd2] bg-[#fffaf3] p-4 text-sm leading-6 text-[#75675f]">
+                <input
+                  className="mt-1 h-4 w-4 accent-[#245b3c]"
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(event) => setMarketingOptIn(event.target.checked)}
+                />
+                <span>
+                  Quero receber novidades, materiais e campanhas do Lembraí por
+                  e-mail.
+                </span>
+              </label>
             </div>
-          </div>
+            <button
+              type="submit"
+              disabled={savingProfile}
+              className="mt-6 inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-[18px] bg-[#261f2d] px-5 font-semibold text-white shadow-[0_20px_58px_rgba(38,31,45,0.18)] transition hover:-translate-y-0.5 hover:bg-[#33293d] disabled:cursor-wait disabled:opacity-70"
+            >
+              {savingProfile ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-5 w-5" />
+              )}
+              {savingProfile ? 'Salvando...' : 'Salvar dados'}
+            </button>
+          </form>
 
           <form
             onSubmit={updatePassword}
@@ -350,6 +477,7 @@ export function AccountSettings() {
           </form>
         </section>
 
+        {isManager ? (
         <section className="rounded-[34px] border border-white/80 bg-white/76 p-6 shadow-[0_26px_80px_rgba(38,31,45,0.10)] backdrop-blur-xl">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -425,6 +553,7 @@ export function AccountSettings() {
             })}
           </div>
         </section>
+        ) : null}
       </div>
     </main>
   );

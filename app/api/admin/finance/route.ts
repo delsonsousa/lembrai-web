@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 
 import { requireAuth } from "@/lib/auth";
-import { getStripe } from "@/lib/stripe";
+import { getStripeFinance, getStripeFinanceMode } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -56,7 +56,9 @@ function normalizeStripeSession(session: Stripe.Checkout.Session): FinancePaymen
 }
 
 async function listStripeSessions(from: Date, to: Date) {
-  const stripe = getStripe();
+  const stripe = getStripeFinance();
+  if (!stripe) return [];
+
   const sessions: Stripe.Checkout.Session[] = [];
   let startingAfter: string | undefined;
 
@@ -87,13 +89,18 @@ async function countManualAccesses(from: Date, to: Date) {
     .gte("created_at", from.toISOString())
     .lte("created_at", to.toISOString());
 
-  if (error) throw error;
+  if (error) {
+    console.error("admin finance manual access count error", error);
+    return 0;
+  }
+
   return count ?? 0;
 }
 
 function buildSummary(
   payments: FinancePayment[],
   source: "stripe" | "unavailable",
+  mode: "live" | "test" | "unknown" | "unavailable",
   manualAccessCount: number
 ) {
   const paid = payments.filter(
@@ -116,6 +123,7 @@ function buildSummary(
 
   return {
     source,
+    mode,
     totalRevenue,
     paidCount: paid.length,
     unpaidCount: unpaid.length,
@@ -170,10 +178,11 @@ export async function GET(request: Request) {
   const format = url.searchParams.get("format");
 
   let source: "stripe" | "unavailable" = "unavailable";
+  const mode = getStripeFinanceMode();
   let payments: FinancePayment[];
   const manualAccessCount = await countManualAccesses(from, to);
 
-  if (process.env.STRIPE_SECRET_KEY) {
+  if (getStripeFinance()) {
     try {
       payments = await listStripeSessions(from, to);
       source = "stripe";
@@ -203,7 +212,7 @@ export async function GET(request: Request) {
       from: from.toISOString(),
       to: to.toISOString(),
     },
-    summary: buildSummary(payments, source, manualAccessCount),
+    summary: buildSummary(payments, source, mode, manualAccessCount),
     payments,
   });
 }

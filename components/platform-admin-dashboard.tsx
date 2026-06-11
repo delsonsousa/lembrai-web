@@ -94,6 +94,7 @@ type FinanceData = {
   };
   summary: {
     source: "stripe" | "unavailable";
+    mode: "live" | "test" | "unknown" | "unavailable";
     totalRevenue: number;
     paidCount: number;
     unpaidCount: number;
@@ -120,6 +121,7 @@ type Overview = {
   purchases: AdminPurchase[];
   billing: {
     source: "stripe" | "unavailable";
+    mode: "live" | "test" | "unknown" | "unavailable";
     totalRevenue: number;
     paidSessions: number | null;
     recentPayments: StripePayment[];
@@ -280,9 +282,16 @@ export function PlatformAdminDashboard() {
     [overview]
   );
   const financeConnected = finance?.summary.source === "stripe";
+  const financeModeLabel =
+    finance?.summary.mode === "live"
+      ? "Stripe live"
+      : finance?.summary.mode === "test"
+        ? "Stripe test"
+        : "Stripe";
   const financeSummary = financeConnected
     ? finance.summary
     : {
+        mode: "unavailable" as const,
         totalRevenue: 0,
         averageTicket: 0,
         paidCount: 0,
@@ -348,7 +357,15 @@ export function PlatformAdminDashboard() {
             icon={<Wallet className="h-5 w-5" />}
             label="Faturamento"
             value={formatCurrency(stats.totalRevenue, "brl")}
-            description={overview.billing.source === "stripe" ? "direto do Stripe" : "Stripe não conectado"}
+            description={
+              overview.billing.source === "stripe"
+                ? overview.billing.mode === "live"
+                  ? "Stripe live"
+                  : overview.billing.mode === "test"
+                    ? "Stripe test"
+                    : "direto do Stripe"
+                : "Stripe não conectado"
+            }
             tone="coral"
           />
           <MetricCard
@@ -424,7 +441,7 @@ export function PlatformAdminDashboard() {
               title="Financeiro"
               subtitle={
                 finance?.summary.source === "stripe"
-                  ? "Balanço por período integrado ao Stripe"
+                  ? `Balanço por período integrado ao ${financeModeLabel}`
                   : "Stripe não conectado: faturamento real indisponível"
               }
             >

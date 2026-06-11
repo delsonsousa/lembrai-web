@@ -172,6 +172,16 @@ create table if not exists public.email_verification_codes (
   created_at timestamptz default now()
 );
 
+create table if not exists public.password_reset_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  email text not null,
+  token_hash text unique not null,
+  used_at timestamptz,
+  expires_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
   actor_user_id uuid references public.profiles(id),
@@ -253,6 +263,9 @@ create index if not exists purchases_user_id_idx on public.purchases(user_id);
 create index if not exists purchases_source_idx on public.purchases(source);
 create index if not exists purchases_expires_at_idx on public.purchases(expires_at);
 create index if not exists email_verification_codes_email_idx on public.email_verification_codes(email);
+create index if not exists password_reset_tokens_email_idx on public.password_reset_tokens(email);
+create index if not exists password_reset_tokens_token_hash_idx on public.password_reset_tokens(token_hash);
+create index if not exists password_reset_tokens_expires_at_idx on public.password_reset_tokens(expires_at);
 create index if not exists audit_logs_actor_user_id_idx on public.audit_logs(actor_user_id);
 create index if not exists audit_logs_target_idx on public.audit_logs(target_type, target_id);
 create index if not exists leads_email_idx on public.leads(email);
@@ -337,6 +350,7 @@ alter table public.guests enable row level security;
 alter table public.media enable row level security;
 alter table public.purchases enable row level security;
 alter table public.email_verification_codes enable row level security;
+alter table public.password_reset_tokens enable row level security;
 alter table public.audit_logs enable row level security;
 alter table public.leads enable row level security;
 

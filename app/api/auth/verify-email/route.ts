@@ -1,4 +1,4 @@
-import { linkPaidPurchasesToUser } from "@/lib/auth";
+import { sendWelcomeEmail } from "@/lib/email";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { matchesVerificationCode } from "@/lib/verification-code";
@@ -79,7 +79,9 @@ export async function POST(request: Request) {
 
     if (updateCodeError) throw updateCodeError;
 
-    await linkPaidPurchasesToUser(profile.id, email);
+    await sendWelcomeEmail({ to: email, name: profile.name }).catch((error) => {
+      console.error("welcome email error", error);
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

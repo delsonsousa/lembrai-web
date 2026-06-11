@@ -1,5 +1,5 @@
 import { isPurchaseActive, requireAuth } from "@/lib/auth";
-import { getStripe } from "@/lib/stripe";
+import { getStripeFinance, getStripeFinanceMode } from "@/lib/stripe";
 import { asEvents, asProfiles, getSupabaseAdmin } from "@/lib/supabase";
 import type { PurchaseRecord } from "@/lib/types";
 import { toEventDto, toProfileDto } from "@/lib/types";
@@ -25,9 +25,13 @@ function formatStripePayment(session: {
 }
 
 async function getStripeBillingSnapshot() {
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const stripe = getStripeFinance();
+  const mode = getStripeFinanceMode();
+
+  if (!stripe) {
     return {
       source: "unavailable" as const,
+      mode,
       totalRevenue: 0,
       paidSessions: null,
       recentPayments: [],
@@ -35,13 +39,14 @@ async function getStripeBillingSnapshot() {
   }
 
   try {
-    const sessions = await getStripe().checkout.sessions.list({ limit: 100 });
+    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
     const paidSessions = sessions.data.filter(
       (session) => session.payment_status === "paid"
     );
 
     return {
       source: "stripe" as const,
+      mode,
       totalRevenue: paidSessions.reduce(
         (sum, session) => sum + (session.amount_total ?? 0),
         0
@@ -53,6 +58,7 @@ async function getStripeBillingSnapshot() {
     console.error("stripe billing snapshot error", error);
     return {
       source: "unavailable" as const,
+      mode,
       totalRevenue: 0,
       paidSessions: null,
       recentPayments: [],
@@ -217,6 +223,7 @@ export async function GET(request: Request) {
     })),
     billing: {
       source: stripeBilling.source,
+      mode: stripeBilling.mode,
       totalRevenue: stripeBilling.totalRevenue,
       paidSessions: stripeBilling.paidSessions,
       recentPayments: stripeBilling.recentPayments,

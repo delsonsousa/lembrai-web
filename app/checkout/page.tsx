@@ -60,14 +60,14 @@ export default function CheckoutPage() {
         </header>
 
         <div className="mt-7">
-          <PurchaseFlowStepper currentStep={1} />
+          <PurchaseFlowStepper currentStep={3} />
         </div>
 
         <section className="grid flex-1 items-center gap-8 py-10 lg:grid-cols-[0.4fr_0.6fr] lg:gap-12 lg:py-12">
           <div className="max-w-[29rem]">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#f06f4f]/14 bg-white/60 px-4 py-2 text-sm font-semibold text-[#c65339] shadow-[0_18px_60px_rgba(240,111,79,0.10)] backdrop-blur-xl">
               <BadgeCheck className="h-4 w-4" />
-              Etapa 1 de 4 · Pagamento único
+              Etapa 3 de 4 · Pagamento único
             </div>
 
             <h1 className="mt-7 text-4xl font-semibold leading-[1.02] tracking-[-0.052em] sm:text-5xl">
@@ -79,8 +79,9 @@ export default function CheckoutPage() {
             </p>
 
             <div className="mt-6 rounded-[24px] border border-[#245b3c]/10 bg-[#245b3c]/7 p-4 text-sm leading-6 text-[#4f6251] shadow-[0_18px_54px_rgba(36,91,60,0.08)]">
-              Depois do pagamento, você cria sua conta com o mesmo e-mail usado
-              no Stripe. É isso que libera o painel do organizador.
+              Faça login com a conta verificada antes de pagar. O Stripe recebe
+              o e-mail dessa conta e o acesso é liberado automaticamente após a
+              confirmação.
             </div>
 
             <div className="mt-8 rounded-[28px] border border-white/70 bg-white/58 p-4 shadow-[0_24px_80px_rgba(38,31,45,0.08)] backdrop-blur-xl">
@@ -171,7 +172,8 @@ export default function CheckoutPage() {
 
                 <p className="mt-4 text-center text-sm leading-6 text-[#7a6c62]">
                   Você será redirecionado para o ambiente seguro do Stripe. Na
-                  volta, o próximo passo é criar sua conta de gestor.
+                  volta, o painel será liberado assim que o pagamento for
+                  confirmado.
                 </p>
 
                 <div className="my-7 h-px bg-gradient-to-r from-transparent via-[#261f2d]/14 to-transparent" />

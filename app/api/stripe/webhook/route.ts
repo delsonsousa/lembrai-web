@@ -1,5 +1,5 @@
+import { recordPaidCheckoutSession } from "@/lib/checkout-session";
 import { getStripe } from "@/lib/stripe";
-import { getSupabaseAdmin } from "@/lib/supabase";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -29,29 +29,15 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (session.payment_status === "paid") {
-      const expiresAt = new Date();
-      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-
-      const supabase = getSupabaseAdmin();
-      const { error } = await supabase.from("purchases").upsert(
-        {
-          stripe_session_id: session.id,
-          stripe_payment_intent_id:
-            typeof session.payment_intent === "string"
-              ? session.payment_intent
-              : (session.payment_intent?.id ?? null),
-          customer_email: (session.customer_details?.email ?? session.customer_email ?? "").toLowerCase(),
-          amount_total: session.amount_total ?? 0,
-          currency: session.currency ?? "brl",
-          status: "paid",
-          plan_name: "Lembraí",
-          expires_at: expiresAt.toISOString(),
-          metadata: session.metadata ?? {},
-        },
-        { onConflict: "stripe_session_id" }
-      );
-
-      if (error) {
+      try {
+        const result = await recordPaidCheckoutSession(session);
+        if (!result.ok) {
+          console.error("webhook checkout session not recorded", {
+            sessionId: session.id,
+            reason: result.reason,
+          });
+        }
+      } catch (error) {
         console.error("webhook purchases upsert error", error);
         return Response.json({ error: "Failed to record purchase" }, { status: 500 });
       }

@@ -115,7 +115,7 @@ export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean 
         </header>
 
         <div className="mt-7">
-          <PurchaseFlowStepper currentStep={2} />
+          <PurchaseFlowStepper currentStep={1} />
         </div>
 
         <section className="grid flex-1 items-center gap-8 py-10 lg:grid-cols-[0.42fr_0.58fr] lg:gap-12 lg:py-12">
@@ -125,34 +125,34 @@ export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean 
 
             <div className="relative">
               <Link
-                href="/checkout"
+                href="/"
                 className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm font-semibold text-white/74 transition hover:bg-white/14"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Voltar ao checkout
+                Página inicial
               </Link>
               <p className="mt-7 text-sm font-semibold uppercase tracking-[0.24em] text-[#ffd7a4]">
-                Etapa 2 de 4 · Cadastro
+                Etapa 1 de 4 · Cadastro
               </p>
               <h1 className="mt-4 text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl">
-                Agora conecte a compra ao seu usuário.
+                Primeiro crie sua conta de organizador.
               </h1>
               <p className="mt-5 text-lg leading-8 text-white/64">
-                O cadastro depende do pagamento aprovado. Use exatamente o mesmo
-                e-mail usado no Stripe para vincular sua compra ao painel.
+                Vamos confirmar seu e-mail antes do pagamento para vincular a
+                compra ao usuário certo automaticamente.
               </p>
 
               <div className="mt-6 rounded-[24px] border border-[#aee6a2]/16 bg-[#aee6a2]/10 p-4 text-sm leading-6 text-white/78">
                 {fromCheckout
-                  ? "Você veio do checkout. Complete o cadastro para seguir para a verificação de e-mail."
-                  : "Se você ainda não concluiu o pagamento, comece pelo checkout antes de criar sua conta."}
+                  ? "Complete o cadastro para seguir para a confirmação de e-mail e depois finalizar o pagamento."
+                  : "Depois da confirmação do e-mail, você entra na conta e finaliza o pagamento pelo Stripe."}
               </div>
 
               <div className="mt-8 grid gap-3">
                 {[
-                  "Compra paga validada pelo e-mail",
-                  "Código de verificação antes do login",
-                  "Dashboard liberado somente após todos os passos",
+                  "Conta criada antes do pagamento",
+                  "Código de verificação por e-mail",
+                  "Pagamento vinculado automaticamente ao usuário",
                 ].map((item) => (
                   <div
                     key={item}
@@ -183,8 +183,8 @@ export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean 
                     Dados do organizador
                   </h2>
                   <p className="mt-3 max-w-lg leading-7 text-[#75675f]">
-                    O painel será liberado somente se este e-mail tiver uma
-                    compra aprovada no Stripe.
+                    Use um e-mail que você acessa. Ele será confirmado antes do
+                    pagamento.
                   </p>
                 </div>
                 <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#261f2d] text-[#ffd7a4] sm:flex">
@@ -194,7 +194,7 @@ export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean 
 
               <div className="mt-7 grid gap-4">
                 <Input label="Nome" value={name} onChange={setName} />
-                <Input label="E-mail da compra" type="email" value={email} onChange={setEmail} />
+                <Input label="E-mail" type="email" value={email} onChange={setEmail} />
                 <Input label="Senha" type="password" value={password} onChange={setPassword} />
                 <Input
                   label="Confirmar senha"
@@ -244,7 +244,7 @@ export function RegisterForm({ fromCheckout = false }: { fromCheckout?: boolean 
                 ) : (
                   <ShieldCheck className="h-5 w-5" />
                 )}
-                {loading ? "Vinculando compra..." : "Criar conta e vincular compra"}
+                {loading ? "Criando conta..." : "Criar conta e verificar e-mail"}
               </button>
             </div>
           </form>

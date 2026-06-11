@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { publicIdFromUserId } from "@/lib/public-id";
-import { isPurchaseActive } from "@/lib/auth";
 import { sendVerificationCodeEmail } from "@/lib/email";
 import { validatePasswordStrength } from "@/lib/password";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
@@ -43,23 +42,23 @@ export async function POST(request: Request) {
     }
 
     const supabase = getSupabaseAdmin();
-    const { data: paidPurchase, error: purchaseError } = await supabase
-      .from("purchases")
-      .select("*")
-      .eq("status", "paid")
-      .ilike("customer_email", email)
-      .limit(25);
+    const { data: existingProfile, error: existingProfileError } =
+      await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
 
-    if (purchaseError) throw purchaseError;
+    if (existingProfileError) throw existingProfileError;
 
-    if (!((paidPurchase ?? []) as Array<{ status: "paid"; expires_at: string | null }>).some(isPurchaseActive)) {
+    if (existingProfile) {
       return Response.json(
         {
           error:
-            "Não encontramos um pagamento aprovado para este e-mail. Finalize o checkout antes de criar sua conta.",
-          redirectTo: "/checkout",
+            "Este e-mail já possui uma conta. Faça login para continuar.",
+          redirectTo: "/login",
         },
-        { status: 402 }
+        { status: 409 }
       );
     }
 

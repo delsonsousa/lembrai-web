@@ -106,20 +106,6 @@ export function assertManagerCanAccessEvent(
   return isManagerRole(profile.role) && profile.id === event.manager_id;
 }
 
-export async function linkPaidPurchasesToUser(userId: string, email: string) {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!normalizedEmail) return;
-
-  const { error } = await getSupabaseAdmin()
-    .from("purchases")
-    .update({ user_id: userId })
-    .is("user_id", null)
-    .eq("status", "paid")
-    .ilike("customer_email", normalizedEmail);
-
-  if (error) throw error;
-}
-
 export async function getPaidPurchaseForManager(userId: string) {
   const { data, error } = await getSupabaseAdmin()
     .from("purchases")
@@ -184,7 +170,6 @@ export async function getManagerAccessStatus(
     };
   }
 
-  await linkPaidPurchasesToUser(auth.profile.id, auth.email);
   const purchase = await getPaidPurchaseForManager(auth.profile.id);
 
   if (!purchase) {

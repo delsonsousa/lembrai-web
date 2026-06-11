@@ -3,6 +3,7 @@ import {
   isPurchaseActive,
   requireManagerReady,
 } from "@/lib/auth";
+import { sendEventCreatedEmail } from "@/lib/email";
 import { addMonths, ensureEventUploadStatus, EVENT_STORAGE_MONTHS } from "@/lib/events";
 import { normalizeSlug, isValidSlug } from "@/lib/slug";
 import { asEvents, getSupabaseAdmin } from "@/lib/supabase";
@@ -297,6 +298,17 @@ export async function POST(request: Request) {
         purchase_id: purchase.id,
         event_date: eventDate!.toISOString(),
       },
+    });
+
+    await sendEventCreatedEmail({
+      to: auth.email,
+      managerName: auth.profile.name,
+      eventName: data.name,
+      eventSlug: data.slug,
+      eventDate: data.event_date,
+      expiresAt: data.expires_at,
+    }).catch((emailError) => {
+      console.error("event created email error", emailError);
     });
 
     return Response.json({ event: toEventDto(data) }, { status: 201 });

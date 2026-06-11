@@ -115,7 +115,7 @@ const productJsonLd = {
     price: '199.00',
     priceCurrency: 'BRL',
     availability: 'https://schema.org/InStock',
-    url: `${siteUrl}/checkout`,
+    url: `${siteUrl}/register`,
   },
 };
 
@@ -203,7 +203,7 @@ export default function Home() {
               <div className="motion-rise motion-delay-5 mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="motion-glow-button inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-7 text-base font-semibold text-white shadow-[0_22px_60px_rgba(240,111,79,0.38)] transition hover:-translate-y-0.5 hover:bg-[#da6043]"
-                  href="/checkout"
+                  href="/register"
                 >
                   Criar o álbum do meu evento por R$ 199
                   <ArrowRight className="h-5 w-5" />
@@ -541,7 +541,7 @@ export default function Home() {
                   </div>
 
                   <Link
-                    href="/checkout"
+                    href="/register"
                     className="motion-glow-button mt-8 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-6 text-base font-semibold text-white shadow-[0_22px_60px_rgba(240,111,79,0.32)] transition hover:-translate-y-0.5 hover:bg-[#da6043] hover:shadow-[0_28px_70px_rgba(240,111,79,0.40)]"
                   >
                     Garantir meu álbum por R$ 199
@@ -597,7 +597,7 @@ export default function Home() {
 
           <div className="motion-view mt-10 text-center">
             <Link
-              href="/checkout"
+              href="/register"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#261f2d] px-6 font-semibold text-white shadow-[0_18px_44px_rgba(38,31,45,0.22)] transition hover:-translate-y-0.5"
             >
               Pronto para começar? Criar meu evento
@@ -651,7 +651,7 @@ export default function Home() {
                 </p>
               </div>
               <Link
-                href="/checkout"
+                href="/register"
                 className="motion-glow-button motion-glow-button-light inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 text-base font-semibold text-[#261f2d] shadow-[0_24px_70px_rgba(255,255,255,0.12)] transition hover:-translate-y-0.5 hover:bg-[#fff4e7] sm:w-auto"
               >
                 Criar meu álbum por R$ 199
@@ -871,7 +871,7 @@ function TestimonialCard({
   return (
     <article className="motion-view group relative flex flex-col overflow-hidden rounded-[34px] border border-[#eadfd2] bg-white p-7 shadow-[0_22px_70px_rgba(38,31,45,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_34px_100px_rgba(38,31,45,0.12)]">
       <div className="absolute right-6 top-6 text-[7rem] font-serif leading-none text-[#f6efe7] select-none">
-        "
+        &quot;
       </div>
       <div className="relative flex-1">
         <p className="text-lg leading-8 text-[#3d3240]">{quote}</p>

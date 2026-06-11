@@ -1,6 +1,15 @@
 "use client";
 
-import { CalendarDays, HardDrive, Mail, ShieldCheck, Trash2, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  HardDrive,
+  Loader2,
+  Mail,
+  ShieldCheck,
+  Trash2,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -33,6 +42,7 @@ export function AdminUserDetail({ userId }: { userId: string }) {
   const router = useRouter();
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,10 +71,6 @@ export function AdminUserDetail({ userId }: { userId: string }) {
 
   async function deleteUser() {
     if (!detail) return;
-    const confirmed = window.confirm(
-      `Excluir o usuário "${detail.user.email}", eventos e mídias no S3? Esta ação não pode ser desfeita.`
-    );
-    if (!confirmed) return;
 
     setDeleting(true);
 
@@ -77,6 +83,7 @@ export function AdminUserDetail({ userId }: { userId: string }) {
         throw new Error(await readApiError(response, "Não foi possível excluir."));
       }
 
+      showToast({ type: "success", message: "Usuário excluído." });
       router.replace("/admin");
     } catch (deleteError) {
       showToast({
@@ -113,7 +120,7 @@ export function AdminUserDetail({ userId }: { userId: string }) {
             <button
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[#ffb59f]/20 bg-[#fff1ed]/10 px-5 font-semibold text-[#ffb59f] transition hover:-translate-y-0.5 hover:bg-[#fff1ed] hover:text-[#9f2d20] disabled:opacity-70"
               type="button"
-              onClick={deleteUser}
+              onClick={() => setDeleteDialogOpen(true)}
               disabled={deleting}
             >
               {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
@@ -163,6 +170,85 @@ export function AdminUserDetail({ userId }: { userId: string }) {
           </Panel>
         </section>
       </div>
+
+      {deleteDialogOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#261f2d]/58 px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-user-title"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-[30px] border border-white/70 bg-[#fffaf3] shadow-[0_34px_120px_rgba(38,31,45,0.34)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[#eadfd2] p-6">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff1ed] text-[#c74432]">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2
+                    id="delete-user-title"
+                    className="text-2xl font-semibold tracking-[-0.04em]"
+                  >
+                    Excluir usuário?
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-[#75675f]">
+                    Esta ação remove a conta, eventos e registros vinculados ao
+                    usuário, incluindo compras, convidados, mídias, códigos e
+                    arquivos do storage. Ela não pode ser desfeita.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={deleting}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#eadfd2] bg-white text-[#75675f] transition hover:bg-[#f6efe7] disabled:opacity-60"
+                aria-label="Fechar confirmação"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="rounded-2xl border border-[#eadfd2] bg-white p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#9b8d84]">
+                  Usuário
+                </p>
+                <p className="mt-1 font-semibold text-[#261f2d]">
+                  {detail.user.name ?? detail.user.email}
+                </p>
+                <p className="mt-1 text-sm text-[#75675f]">
+                  {detail.user.email}
+                </p>
+              </div>
+
+              <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDeleteDialogOpen(false)}
+                  disabled={deleting}
+                  className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#eadfd2] bg-white px-5 font-semibold text-[#46394e] transition hover:bg-[#f6efe7] disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteUser}
+                  disabled={deleting}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#c74432] px-5 font-semibold text-white shadow-[0_18px_44px_rgba(199,68,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#a93427] disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {deleting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-5 w-5" />
+                  )}
+                  {deleting ? "Excluindo..." : "Excluir definitivamente"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

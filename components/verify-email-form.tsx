@@ -132,8 +132,8 @@ export function VerifyEmailForm({ initialEmail = "" }: { initialEmail?: string }
             Confirme seu e-mail
           </h1>
           <p className="mt-4 leading-7 text-[#6d5f58]">
-            Enviamos um código de 6 dígitos para o e-mail da sua compra. Digite
-            o código abaixo para liberar o acesso ao painel do organizador.
+            Enviamos um código de 6 dígitos para o e-mail da sua conta. Digite
+            o código abaixo para continuar a configuração do seu acesso.
           </p>
 
           <label className="mt-8 grid gap-2 text-sm font-semibold text-[#46394e]">
@@ -147,7 +147,7 @@ export function VerifyEmailForm({ initialEmail = "" }: { initialEmail?: string }
           </label>
           <div className="mt-3 flex flex-col gap-2 rounded-[18px] border border-[#eadfd2]/80 bg-white/58 px-4 py-3 text-sm text-[#6d5f58] shadow-[0_14px_34px_rgba(38,31,45,0.05)] sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p>Este não é o e-mail da sua compra?</p>
+              <p>Este não é o e-mail da sua conta?</p>
               <Link
                 href="/login"
                 className="mt-1 inline-flex w-fit font-semibold text-[#e56548] transition hover:text-[#c9553d]"

@@ -164,7 +164,15 @@ export function LoginForm() {
               </label>
 
               <label className="mt-4 grid gap-2 text-sm font-semibold text-[#46394e]">
-                Senha
+                <span className="flex items-center justify-between gap-3">
+                  Senha
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-[#f06f4f] transition hover:text-[#c65339]"
+                  >
+                    Esqueci minha senha
+                  </Link>
+                </span>
                 <input
                   className="h-12 rounded-[17px] border border-[#eadfd2] bg-white/90 px-4 text-base text-[#261f2d] outline-none transition placeholder:text-[#a99c92] hover:border-[#d9c7b7] focus:border-[#f06f4f]/55 focus:bg-white focus:shadow-[0_0_0_4px_rgba(240,111,79,0.10),0_14px_34px_rgba(38,31,45,0.06)]"
                   type="password"
