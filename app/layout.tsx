@@ -13,9 +13,71 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembrai.com.br";
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Lembraí",
+  url: siteUrl,
+  logo: `${siteUrl}/images/lembrai-hero.png`,
+  sameAs: [],
+  description:
+    "Plataforma brasileira de álbum digital para eventos com QR Code. Centralize fotos e vídeos dos convidados em um único lugar privado.",
+};
+
 export const metadata: Metadata = {
-  title: "Lembraí",
-  description: "Álbum colaborativo privado para eventos.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Lembraí — Álbum digital para eventos com QR Code",
+    template: "%s | Lembraí",
+  },
+  description:
+    "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado. Pagamento único por evento.",
+  keywords: [
+    "álbum digital para eventos",
+    "QR Code para receber fotos de convidados",
+    "centralizar fotos de festa",
+    "receber fotos de convidados",
+    "álbum colaborativo para eventos",
+  ],
+  authors: [{ name: "Lembraí", url: siteUrl }],
+  creator: "Lembraí",
+  publisher: "Lembraí",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Lembraí",
+    title: "Lembraí — Álbum digital para eventos com QR Code",
+    description:
+      "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado.",
+    images: [
+      {
+        url: "/images/lembrai-hero.png",
+        width: 1200,
+        height: 630,
+        alt: "Lembraí — Álbum digital para eventos com QR Code",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Lembraí — Álbum digital para eventos com QR Code",
+    description:
+      "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo.",
+    images: ["/images/lembrai-hero.png"],
+  },
   icons: {
     icon: "/favicon-cropped.png",
     shortcut: "/favicon-cropped.png",
@@ -35,6 +97,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
         <AppToaster />
         {children}
       </body>
