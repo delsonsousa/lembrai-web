@@ -12,13 +12,129 @@ import {
   UploadCloud,
   WandSparkles,
 } from 'lucide-react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { BrandLogo } from '@/components/brand-logo';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ??
+  'https://lembrai.com.br';
+
+const pageTitle = 'Álbum digital para eventos com QR Code | Lembraí';
+const pageDescription =
+  'Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado. Pagamento único de R$ 199 por evento.';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: pageTitle,
+  description: pageDescription,
+  keywords: [
+    'álbum digital para eventos',
+    'QR Code para receber fotos de convidados',
+    'centralizar fotos de festa',
+    'fotos de casamento dos convidados',
+    'álbum de aniversário colaborativo',
+    'receber fotos e vídeos do evento',
+  ],
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: pageTitle,
+    description: pageDescription,
+    url: '/',
+    siteName: 'Lembraí',
+    locale: 'pt_BR',
+    type: 'website',
+    images: ['/images/lembrai-hero.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: pageTitle,
+    description: pageDescription,
+    images: ['/images/lembrai-hero.png'],
+  },
+};
+
+const FAQ_ITEMS = [
+  {
+    question: 'Os convidados precisam instalar algum aplicativo?',
+    answer:
+      'Não — e esse é o segredo do Lembraí. O convidado aponta a câmera para o QR Code, o álbum do evento abre direto no navegador e o envio começa em segundos. Funciona em qualquer celular, Android ou iPhone.',
+  },
+  {
+    question: 'Os convidados precisam criar conta para enviar?',
+    answer:
+      'Também não. Sem login, sem formulário, sem senha. Quanto menos atrito, mais fotos chegam até você — por isso o envio é imediato, direto da galeria do celular.',
+  },
+  {
+    question: 'O álbum do evento fica público na internet?',
+    answer:
+      'Nunca. Cada evento tem seu próprio ambiente privado: o convidado vê apenas o que ele mesmo enviou, e só você acessa o álbum completo no painel do organizador.',
+  },
+  {
+    question: 'Consigo baixar todas as fotos e vídeos depois?',
+    answer:
+      'Sim, quando quiser e na qualidade original. Tudo fica organizado no seu painel, pronto para baixar de uma vez e guardar para sempre.',
+  },
+  {
+    question: 'Por quanto tempo os arquivos ficam disponíveis?',
+    answer:
+      '12 meses após o evento, já incluídos no pagamento único de R$ 199. Tempo de sobra para baixar, reviver e compartilhar cada momento com calma.',
+  },
+  {
+    question: 'Quando recebo o QR Code do meu evento?',
+    answer:
+      'Na hora. Assim que o pagamento é confirmado, seu evento é criado e o QR Code sai pronto para imprimir, colocar nas mesas ou exibir no telão.',
+  },
+  {
+    question: 'Funciona para qual tipo de evento?',
+    answer:
+      'Aniversário, casamento, chá revelação, formatura, evento de igreja ou confraternização da empresa. Se tem gente fotografando, o Lembraí centraliza tudo para você.',
+  },
+];
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer },
+  })),
+};
+
+const productJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'Lembraí — Álbum digital para eventos com QR Code',
+  description: pageDescription,
+  image: `${siteUrl}/images/lembrai-hero.png`,
+  brand: { '@type': 'Brand', name: 'Lembraí' },
+  offers: {
+    '@type': 'Offer',
+    price: '199.00',
+    priceCurrency: 'BRL',
+    availability: 'https://schema.org/InStock',
+    url: `${siteUrl}/checkout`,
+  },
+};
+
 export default function Home() {
   return (
     <main className="landing-motion min-h-screen bg-[#f6efe7] text-[#261f2d]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqJsonLd).replace(/</g, '\\u003c'),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd).replace(/</g, '\\u003c'),
+        }}
+      />
+
       <section className="relative overflow-hidden bg-[#211927]">
         <div className="motion-hero-photo absolute inset-0 bg-[url('/images/lembrai-hero.png')] bg-cover bg-center opacity-55 saturate-[0.85]" />
         <div className="motion-gradient-drift absolute inset-0 bg-[radial-gradient(circle_at_72%_24%,rgba(255,215,164,0.22),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(240,111,79,0.30),transparent_32%),linear-gradient(90deg,rgba(22,16,27,1)_0%,rgba(34,25,41,0.98)_38%,rgba(38,31,45,0.78)_63%,rgba(38,31,45,0.34)_100%)]" />
@@ -33,7 +149,7 @@ export default function Home() {
             <Link
               className="inline-flex h-10 w-32 items-center transition hover:opacity-85 focus:outline-none focus:ring-4 focus:ring-white/18"
               href="/"
-              aria-label="Lembraí"
+              aria-label="Lembraí — álbum digital para eventos"
             >
               <BrandLogo
                 className="h-full w-full object-contain brightness-0 invert"
@@ -50,6 +166,9 @@ export default function Home() {
               </a>
               <a href="#preco" className="transition hover:text-white">
                 Preço
+              </a>
+              <a href="#faq" className="transition hover:text-white">
+                Dúvidas
               </a>
               <a href="#eventos" className="transition hover:text-white">
                 Eventos
@@ -68,16 +187,17 @@ export default function Home() {
             <div className="max-w-4xl text-white">
               <div className="motion-rise motion-delay-2 inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 text-sm text-white/82 shadow-[0_16px_50px_rgba(0,0,0,0.22)] backdrop-blur-md">
                 <Sparkles className="motion-icon-spark h-4 w-4 text-[#ffd7a4]" />
-                Fotos e vídeos do evento em um único lugar
+                Álbum digital do evento com QR Code
               </div>
 
               <h1 className="motion-rise motion-delay-3 mt-7 max-w-4xl text-5xl font-semibold leading-[0.94] tracking-[-0.055em] sm:text-7xl lg:text-[78px]">
-                Nunca mais perca as fotos dos seus convidados.
+                As melhores fotos da sua festa estão no celular dos convidados.
               </h1>
 
               <p className="motion-rise motion-delay-4 mt-7 max-w-2xl text-lg leading-8 text-white/76 sm:text-xl">
-                Receba fotos e vídeos em tempo real através de um QR Code. Sem
-                aplicativo, sem cadastro e sem precisar cobrar ninguém depois.
+                O Lembraí traz todas para você: cada convidado escaneia o QR
+                Code e envia fotos e vídeos na hora — sem aplicativo, sem
+                cadastro e sem “depois eu te mando”.
               </p>
 
               <div className="motion-rise motion-delay-5 mt-9 flex flex-col gap-3 sm:flex-row">
@@ -85,7 +205,7 @@ export default function Home() {
                   className="motion-glow-button inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-7 text-base font-semibold text-white shadow-[0_22px_60px_rgba(240,111,79,0.38)] transition hover:-translate-y-0.5 hover:bg-[#da6043]"
                   href="/checkout"
                 >
-                  Criar meu evento por R$ 199
+                  Criar o álbum do meu evento por R$ 199
                   <ArrowRight className="h-5 w-5" />
                 </Link>
 
@@ -97,18 +217,22 @@ export default function Home() {
                 </a>
               </div>
 
-              <div className="motion-rise motion-delay-6 motion-stagger mt-9 grid max-w-3xl gap-3 text-sm text-white/76 sm:grid-cols-3">
+              <p className="motion-rise motion-delay-5 mt-4 text-sm text-white/55">
+                Pagamento único e seguro. QR Code pronto em minutos.
+              </p>
+
+              <div className="motion-rise motion-delay-6 motion-stagger mt-8 grid max-w-3xl gap-3 text-sm text-white/76 sm:grid-cols-3">
                 <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/7 px-3 py-2 backdrop-blur-md">
                   <CheckCircle2 className="h-4 w-4 text-[#aee6a2]" />
-                  Sem app para convidados
+                  Sem app e sem cadastro
                 </div>
                 <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/7 px-3 py-2 backdrop-blur-md">
                   <CheckCircle2 className="h-4 w-4 text-[#aee6a2]" />
-                  Fotos e vídeos
+                  Fotos e vídeos em tempo real
                 </div>
                 <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/7 px-3 py-2 backdrop-blur-md">
                   <CheckCircle2 className="h-4 w-4 text-[#aee6a2]" />
-                  Álbum privado
+                  Álbum 100% privado
                 </div>
               </div>
             </div>
@@ -125,21 +249,29 @@ export default function Home() {
         <div className="relative mx-auto max-w-7xl">
           <div className="motion-view mx-auto max-w-3xl text-center">
             <h2 className="text-4xl font-semibold leading-tight tracking-[-0.045em] sm:text-6xl">
-              Todo mundo tira foto. Pouca gente recebe.
+              Todo mundo registra a sua festa. Quase ninguém envia depois.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-[#6d5f58]">
-              As melhores fotos do evento normalmente ficam espalhadas entre
-              WhatsApp, Instagram, galerias e celulares.
+              Sem um lugar oficial para receber, as fotos dos convidados se
+              perdem entre o WhatsApp, os stories e a galeria de cada celular —
+              e a maioria você nunca chega a ver.
             </p>
           </div>
 
-          <div className="motion-stagger mt-12 grid gap-4 lg:grid-cols-3">
+          <div className="motion-stagger mt-12 grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr]">
             <SocialStat
               value="95%"
-              text="das fotos nunca chegam ao organizador"
+              text="das fotos tiradas pelos convidados nunca chegam até quem organizou a festa"
+              featured
             />
-            <SocialStat value="1 QR Code" text="para centralizar tudo" />
-            <SocialStat value="100%" text="privado por evento" />
+            <SocialStat
+              value="1 QR Code"
+              text="é o suficiente para centralizar as fotos de todos os convidados em um único álbum"
+            />
+            <SocialStat
+              value="100%"
+              text="privado: cada convidado vê só o que enviou — o álbum completo é seu"
+            />
           </div>
         </div>
       </section>
@@ -157,15 +289,15 @@ export default function Home() {
                 Como funciona
               </p>
               <h2 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-6xl">
-                Menos cobrança depois. Mais memória guardada na hora.
+                Do convite ao álbum completo em três passos.
               </h2>
             </div>
 
             <p className="max-w-2xl text-lg leading-8 text-[#6d5f58]">
-              O Lembraí vira o ponto oficial de envio do evento. O convidado
-              abre pelo QR Code, manda fotos e vídeos, e o organizador recebe
-              tudo em um painel privado, sem misturar eventos e sem galeria
-              pública.
+              O Lembraí vira o ponto oficial de envio do seu evento: um álbum
+              digital privado que recebe as fotos de festa de cada convidado em
+              tempo real. Você organiza tudo em minutos — e nunca mais precisa
+              pedir foto depois.
             </p>
           </div>
 
@@ -173,20 +305,22 @@ export default function Home() {
             <FeatureCard
               number="01"
               icon={<Camera className="h-6 w-6" />}
-              title="Crie o evento"
-              text="Defina nome, data e gestor. O Lembraí gera o link privado e o QR Code automaticamente."
+              title="Crie o evento em minutos"
+              text="Pague uma vez, dê um nome à festa e pronto: o Lembraí gera o link privado e o QR Code exclusivo do seu álbum na hora."
+              showArrow
             />
             <FeatureCard
               number="02"
               icon={<QrCode className="h-6 w-6" />}
-              title="Espalhe o QR Code"
-              text="Coloque na entrada, mesa, convite ou telão. O convidado abre direto no navegador."
+              title="Espalhe o QR Code na festa"
+              text="Imprima e coloque na entrada, nas mesas, no convite ou no telão. O convidado aponta a câmera e o álbum abre direto no navegador."
+              showArrow
             />
             <FeatureCard
               number="03"
               icon={<Download className="h-6 w-6" />}
-              title="Receba tudo organizado"
-              text="Fotos e vídeos ficam no painel do evento, prontos para visualizar, baixar e guardar."
+              title="Receba tudo em tempo real"
+              text="Cada foto e vídeo cai direto no seu painel privado, organizado e pronto para baixar na qualidade original — durante e depois da festa."
             />
           </div>
         </div>
@@ -205,26 +339,26 @@ export default function Home() {
               Chega de “me manda depois”.
             </h2>
             <p className="mt-6 max-w-xl text-lg leading-8 text-[#6d5f58]">
-              O problema não é tirar foto. O problema é receber. O Lembraí reduz
-              a distância entre o momento registrado e o álbum final do
-              organizador.
+              Tirar foto nunca foi o problema. Receber é que era. O Lembraí
+              encurta o caminho entre o clique do convidado e o seu álbum final
+              — sem depender da boa vontade de ninguém.
             </p>
 
             <div className="motion-stagger mt-8 space-y-4">
               <PainPoint
                 icon={<MessageCircle className="h-5 w-5" />}
-                title="Sem grupo bagunçado"
-                text="Nada de mídia perdida entre mensagens, figurinhas e conversas paralelas."
+                title="Sem grupo de WhatsApp bagunçado"
+                text="Suas memórias não competem com figurinhas, áudios e conversas paralelas. Cada envio cai direto no álbum do evento, na qualidade original."
               />
               <PainPoint
                 icon={<ShieldCheck className="h-5 w-5" />}
-                title="Sem galeria pública"
-                text="O convidado vê apenas os próprios envios. O organizador vê tudo."
+                title="Privacidade de verdade"
+                text="Nada de galeria pública: o convidado vê apenas os próprios envios. O álbum completo, só você acessa."
               />
               <PainPoint
                 icon={<UploadCloud className="h-5 w-5" />}
-                title="Sem fricção"
-                text="Escaneou, escolheu as fotos e enviou. Simples o suficiente para usar durante a festa."
+                title="Simples até no meio da festa"
+                text="Escaneou, escolheu, enviou. Três toques no celular — funciona com música alta, pouca luz e criança no colo."
               />
             </div>
           </div>
@@ -251,14 +385,21 @@ export default function Home() {
                   <Metric label="Convidados" value="86" />
                 </div>
 
-                <div className="motion-photo-grid mt-5 grid grid-cols-3 gap-3">
-                  {['01', '02', '03', '04', '05', '06'].map((item) => (
+                <div className="motion-photo-grid mt-5 grid grid-cols-3 gap-2">
+                  {[
+                    'from-[#f06f4f] to-[#c94e30]',
+                    'from-[#ffd7a4] to-[#f0b060]',
+                    'from-[#aee6a2] to-[#5db855]',
+                    'from-[#a78bfa] to-[#7c3aed]',
+                    'from-[#f9a8d4] to-[#db2777]',
+                    'from-[#67e8f9] to-[#0891b2]',
+                  ].map((gradient, i) => (
                     <div
-                      key={item}
-                      className="aspect-square rounded-2xl bg-gradient-to-br from-white/22 to-white/5 p-3"
+                      key={i}
+                      className={`aspect-square overflow-hidden rounded-2xl bg-linear-to-br ${gradient} shadow-[0_4px_14px_rgba(0,0,0,0.25)]`}
                     >
-                      <div className="flex h-full items-end rounded-xl border border-white/10 bg-white/10 p-2 text-xs text-white/60">
-                        IMG_{item}
+                      <div className="flex h-full items-end bg-linear-to-t from-black/40 to-transparent p-1.5">
+                        <div className="h-1.5 w-full rounded-full bg-white/30" />
                       </div>
                     </div>
                   ))}
@@ -266,10 +407,48 @@ export default function Home() {
 
                 <button className="motion-glow-button mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-5 py-4 font-semibold text-white">
                   <Download className="h-5 w-5" />
-                  Baixar tudo
+                  Baixar álbum completo
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-[#f6efe7] px-5 py-28 sm:px-8 lg:px-10">
+        <div className="motion-ambient-one absolute -left-40 top-10 h-112 w-md rounded-full bg-[#ffd7a4]/18 blur-[120px]" />
+        <div className="relative mx-auto max-w-7xl">
+          <div className="motion-view mx-auto max-w-2xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#245b3c]">
+              Quem já usou
+            </p>
+            <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.045em] sm:text-5xl">
+              Organizadores que nunca mais perderam uma foto.
+            </h2>
+          </div>
+
+          <div className="motion-stagger mt-12 grid gap-5 lg:grid-cols-3">
+            <TestimonialCard
+              quote="Coloquei o QR Code na mesa do bolo e em 20 minutos já tinham 140 fotos no painel. Nunca imaginei que seria tão simples."
+              name="Fernanda A."
+              event="Aniversário de 1 ano do filho"
+              initials="FA"
+              color="bg-[#f06f4f]"
+            />
+            <TestimonialCard
+              quote="Nos casamentos sempre perdemos as melhores fotos dos convidados. Com o Lembraí, recebi tudo na mesma noite, em alta qualidade."
+              name="Rodrigo & Camila"
+              event="Casamento"
+              initials="RC"
+              color="bg-[#245b3c]"
+            />
+            <TestimonialCard
+              quote="Usei na formatura da minha turma. O QR Code no telão e todo mundo enviando ao mesmo tempo — funcionou perfeitamente."
+              name="Mariana L."
+              event="Formatura de medicina"
+              initials="ML"
+              color="bg-[#7c3aed]"
+            />
           </div>
         </div>
       </section>
@@ -287,12 +466,12 @@ export default function Home() {
               Preço de lançamento
             </div>
             <h2 className="mt-5 text-4xl font-semibold leading-tight tracking-[-0.045em] sm:text-6xl">
-              Guarde tudo do seu evento por um preço simples.
+              Um pagamento. Todas as fotos. Nenhuma mensalidade.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-[#6d5f58]">
-              Sem assinatura, sem mensalidade e sem surpresa. Você paga uma vez,
-              cria seu QR Code e recebe fotos e vídeos dos convidados em um
-              único lugar.
+              R$ 199 por evento, sem assinatura e sem surpresa no cartão. Você
+              cria o álbum, compartilha o QR Code e recebe as fotos e vídeos de
+              todos os convidados em um único lugar.
             </p>
           </div>
 
@@ -325,12 +504,12 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="mt-4 text-sm leading-6 text-[#ffd7a4]/86">
-                    Menos do que o custo de uma decoração simples e com valor
-                    para sempre.
+                    Em uma festa de 80 convidados, sai menos de R$ 2,50 por
+                    pessoa fotografando para você a noite inteira.
                   </p>
                   <p className="mt-5 max-w-sm leading-7 text-white/66">
-                    Um pagamento para criar o evento, compartilhar o QR Code e
-                    centralizar tudo que os convidados enviarem.
+                    Um único pagamento para criar o álbum, gerar o QR Code e
+                    guardar tudo o que os convidados registrarem.
                   </p>
                   <div className="mt-8 rounded-3xl border border-white/10 bg-white/8 p-4">
                     <div className="flex items-center gap-3">
@@ -338,9 +517,11 @@ export default function Home() {
                         <QrCode className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-semibold">QR Code pronto para usar</p>
+                        <p className="font-semibold">
+                          QR Code liberado na hora
+                        </p>
                         <p className="text-sm text-white/52">
-                          Link privado para compartilhar no evento.
+                          Pronto para imprimir e espalhar pela festa.
                         </p>
                       </div>
                     </div>
@@ -349,13 +530,13 @@ export default function Home() {
 
                 <div className="lg:pl-2">
                   <div className="motion-stagger grid gap-3 sm:grid-cols-2">
-                    <PricingBenefit>1 evento</PricingBenefit>
+                    <PricingBenefit>1 evento completo</PricingBenefit>
                     <PricingBenefit>QR Code exclusivo</PricingBenefit>
                     <PricingBenefit>Fotos ilimitadas</PricingBenefit>
                     <PricingBenefit>Vídeos incluídos</PricingBenefit>
-                    <PricingBenefit>Álbum privado</PricingBenefit>
-                    <PricingBenefit>Convidado sem cadastro</PricingBenefit>
-                    <PricingBenefit>Download completo</PricingBenefit>
+                    <PricingBenefit>Álbum 100% privado</PricingBenefit>
+                    <PricingBenefit>Convidados sem cadastro</PricingBenefit>
+                    <PricingBenefit>Download na qualidade original</PricingBenefit>
                     <PricingBenefit>Armazenamento por 12 meses</PricingBenefit>
                   </div>
 
@@ -363,12 +544,12 @@ export default function Home() {
                     href="/checkout"
                     className="motion-glow-button mt-8 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-6 text-base font-semibold text-white shadow-[0_22px_60px_rgba(240,111,79,0.32)] transition hover:-translate-y-0.5 hover:bg-[#da6043] hover:shadow-[0_28px_70px_rgba(240,111,79,0.40)]"
                   >
-                    Criar meu evento por R$ 199
+                    Garantir meu álbum por R$ 199
                     <ArrowRight className="h-5 w-5" />
                   </Link>
                   <p className="mt-4 text-center text-sm leading-6 text-[#7a6c62]">
-                    Preço de lançamento para os primeiros eventos criados no
-                    Lembraí.
+                    Pagamento único e seguro · Acesso imediato ao painel · Preço
+                    de lançamento válido para os primeiros eventos criados.
                   </p>
                 </div>
               </div>
@@ -377,14 +558,17 @@ export default function Home() {
 
           <div className="motion-stagger mx-auto mt-8 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <GuaranteeItem>QR Code exclusivo por evento</GuaranteeItem>
-            <GuaranteeItem>Fotos e vídeos separados por álbum</GuaranteeItem>
-            <GuaranteeItem>Arquivos armazenados com segurança</GuaranteeItem>
-            <GuaranteeItem>Download completo pelo organizador</GuaranteeItem>
+            <GuaranteeItem>Cada álbum separado e privado</GuaranteeItem>
+            <GuaranteeItem>Arquivos guardados com segurança</GuaranteeItem>
+            <GuaranteeItem>Download completo quando quiser</GuaranteeItem>
           </div>
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#fffaf3] px-5 py-28 sm:px-8 lg:px-10">
+      <section
+        id="faq"
+        className="relative overflow-hidden bg-[#fffaf3] px-5 py-28 sm:px-8 lg:px-10"
+      >
         <div className="motion-ambient-two absolute right-[-12rem] top-[-8rem] h-[32rem] w-[32rem] rounded-full bg-[#f06f4f]/10 blur-[130px]" />
 
         <div className="relative mx-auto max-w-4xl">
@@ -395,29 +579,30 @@ export default function Home() {
             <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.045em] sm:text-6xl">
               Perguntas frequentes
             </h2>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-[#6d5f58]">
+              Tudo o que organizadores perguntam antes de criar o álbum digital
+              do evento.
+            </p>
           </div>
 
           <div className="motion-stagger mt-10 space-y-3">
-            <FAQItem
-              question="O convidado precisa instalar aplicativo?"
-              answer="Não. Basta abrir o QR Code e enviar."
-            />
-            <FAQItem
-              question="Os convidados precisam criar conta?"
-              answer="Não. O envio é imediato."
-            />
-            <FAQItem
-              question="O álbum é público?"
-              answer="Não. Cada evento possui seu próprio ambiente privado."
-            />
-            <FAQItem
-              question="Posso baixar tudo depois?"
-              answer="Sim. O organizador pode baixar fotos e vídeos a qualquer momento."
-            />
-            <FAQItem
-              question="Por quanto tempo os arquivos ficam disponíveis?"
-              answer="12 meses incluídos no plano."
-            />
+            {FAQ_ITEMS.map((item) => (
+              <FAQItem
+                key={item.question}
+                question={item.question}
+                answer={item.answer}
+              />
+            ))}
+          </div>
+
+          <div className="motion-view mt-10 text-center">
+            <Link
+              href="/checkout"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#261f2d] px-6 font-semibold text-white shadow-[0_18px_44px_rgba(38,31,45,0.22)] transition hover:-translate-y-0.5"
+            >
+              Pronto para começar? Criar meu evento
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -436,12 +621,12 @@ export default function Home() {
                   Feito para eventos reais
                 </p>
                 <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-6xl">
-                  Se existe um momento importante, existe um motivo para não
-                  perder as fotos dele.
+                  Você cuidou de cada detalhe. O Lembraí cuida para nenhuma
+                  foto se perder.
                 </h2>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
-                  Aniversários, casamentos, chá revelação, eventos da igreja,
-                  formaturas e eventos corporativos.
+                  Do primeiro abraço ao último convidado: se tem gente
+                  fotografando, tem um álbum esperando para receber.
                 </p>
               </div>
 
@@ -458,23 +643,72 @@ export default function Home() {
             <div className="motion-cta-panel relative mt-12 flex flex-col items-start justify-between gap-5 rounded-[34px] border border-white/10 bg-white/8 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:flex-row sm:items-center sm:p-7">
               <div>
                 <h3 className="text-2xl font-semibold">
-                  Não deixe as melhores fotos se perderem.
+                  Sua festa acontece uma vez. As fotos ficam para sempre.
                 </h3>
                 <p className="mt-2 text-white/64">
-                  Crie o QR Code do seu evento e centralize tudo em um só lugar.
+                  Crie o QR Code do seu evento em minutos e comece a receber as
+                  fotos dos convidados em tempo real.
                 </p>
               </div>
               <Link
                 href="/checkout"
                 className="motion-glow-button motion-glow-button-light inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 text-base font-semibold text-[#261f2d] shadow-[0_24px_70px_rgba(255,255,255,0.12)] transition hover:-translate-y-0.5 hover:bg-[#fff4e7] sm:w-auto"
               >
-                Criar meu evento por R$ 199
+                Criar meu álbum por R$ 199
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </div>
           </div>
         </div>
       </section>
+
+      <footer className="bg-[#f6efe7] px-5 pb-10 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl border-t border-[#e5d9cb] pt-10">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-sm">
+              <div className="h-9 w-28">
+                <BrandLogo
+                  className="h-full w-full object-contain"
+                  sizes="112px"
+                />
+              </div>
+              <p className="mt-4 text-sm leading-6 text-[#6d5f58]">
+                Álbum digital para eventos: receba as fotos e vídeos dos
+                convidados por QR Code, em tempo real, em um painel privado.
+              </p>
+            </div>
+
+            <nav
+              className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm font-medium text-[#46394e] sm:grid-cols-3"
+              aria-label="Links do rodapé"
+            >
+              <a className="transition hover:text-[#f06f4f]" href="#como-funciona">
+                Como funciona
+              </a>
+              <a className="transition hover:text-[#f06f4f]" href="#preco">
+                Preço
+              </a>
+              <a className="transition hover:text-[#f06f4f]" href="#faq">
+                Dúvidas frequentes
+              </a>
+              <Link className="transition hover:text-[#f06f4f]" href="/login">
+                Acessar painel
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/privacy">
+                Privacidade
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/terms">
+                Termos de uso
+              </Link>
+            </nav>
+          </div>
+
+          <p className="mt-10 text-xs text-[#8a7a70]">
+            © {new Date().getFullYear()} Lembraí. Suas memórias, guardadas com
+            carinho e segurança.
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
@@ -489,14 +723,14 @@ function HeroProductMockup() {
       <FloatingStatus
         className="-left-2 top-4 sm:-left-24"
         icon={<BadgeCheck className="h-5 w-5" />}
-        label="Evento criado"
-        text="QR Code pronto"
+        label="Álbum criado"
+        text="QR Code pronto na hora"
       />
       <FloatingStatus
         className="-right-1 top-28 sm:-right-10"
         icon={<Images className="h-5 w-5" />}
         label="+28 fotos agora"
-        text="entrando em tempo real"
+        text="chegando em tempo real"
       />
       <FloatingStatus
         className="bottom-0 left-8 sm:left-2"
@@ -549,10 +783,10 @@ function HeroProductMockup() {
 
               <div className="motion-dashed-drop mt-4 rounded-2xl border border-dashed border-[#d9cbbd] bg-[#fff8ef] p-4 text-center">
                 <p className="text-sm font-medium text-[#46394e]">
-                  Tocar para escolher arquivos
+                  Toque e escolha da galeria
                 </p>
                 <p className="mt-1 text-xs text-[#8d7f76]">
-                  Até 30 MB por foto e 500 MB por vídeo
+                  Fotos até 30 MB · vídeos até 500 MB
                 </p>
               </div>
             </div>
@@ -570,7 +804,7 @@ function HeroProductMockup() {
 
             <button className="motion-glow-button mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-5 py-4 font-semibold text-white shadow-[0_18px_42px_rgba(240,111,79,0.34)]">
               <UploadCloud className="h-5 w-5" />
-              Enviar para o evento
+              Enviar para o álbum
             </button>
           </div>
         </div>
@@ -584,40 +818,115 @@ function FeatureCard({
   icon,
   title,
   text,
+  showArrow,
 }: {
   number: string;
   icon: React.ReactNode;
   title: string;
   text: string;
+  showArrow?: boolean;
 }) {
   return (
-    <article className="group relative overflow-hidden rounded-[34px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(255,250,243,0.78))] p-7 shadow-[0_22px_70px_rgba(38,31,45,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#ffd7a4]/80 hover:shadow-[0_32px_100px_rgba(240,111,79,0.16)]">
-      <div className="motion-card-glow absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#ffd7a4]/0 blur-3xl transition group-hover:bg-[#ffd7a4]/34" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
-      <div className="flex items-center justify-between">
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e8f3df] text-[#245b3c] transition group-hover:bg-[#245b3c] group-hover:text-white">
-          {icon}
+    <div className="relative">
+      <article className="group relative overflow-hidden rounded-[34px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(255,250,243,0.78))] p-7 shadow-[0_22px_70px_rgba(38,31,45,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#ffd7a4]/80 hover:shadow-[0_32px_100px_rgba(240,111,79,0.16)]">
+        <div className="motion-card-glow absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#ffd7a4]/0 blur-3xl transition group-hover:bg-[#ffd7a4]/34" />
+        <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+        <div className="flex items-center justify-between">
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e8f3df] text-[#245b3c] transition group-hover:bg-[#245b3c] group-hover:text-white">
+            {icon}
+          </div>
+          <span className="relative text-6xl font-semibold tracking-[-0.08em] text-[#ead9ca] transition group-hover:text-[#f06f4f]/28">
+            {number}
+          </span>
         </div>
-        <span className="relative text-6xl font-semibold tracking-[-0.08em] text-[#ead9ca] transition group-hover:text-[#f06f4f]/28">
-          {number}
-        </span>
+        <h3 className="relative mt-8 text-2xl font-semibold tracking-[-0.02em]">
+          {title}
+        </h3>
+        <p className="relative mt-3 leading-7 text-[#6d5f58]">{text}</p>
+      </article>
+      {showArrow && (
+        <div className="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 lg:flex">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#eadfd2] bg-white shadow-[0_8px_24px_rgba(38,31,45,0.10)]">
+            <ArrowRight className="h-3.5 w-3.5 text-[#f06f4f]" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestimonialCard({
+  quote,
+  name,
+  event,
+  initials,
+  color,
+}: {
+  quote: string;
+  name: string;
+  event: string;
+  initials: string;
+  color: string;
+}) {
+  return (
+    <article className="motion-view group relative flex flex-col overflow-hidden rounded-[34px] border border-[#eadfd2] bg-white p-7 shadow-[0_22px_70px_rgba(38,31,45,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_34px_100px_rgba(38,31,45,0.12)]">
+      <div className="absolute right-6 top-6 text-[7rem] font-serif leading-none text-[#f6efe7] select-none">
+        "
       </div>
-      <h3 className="relative mt-8 text-2xl font-semibold tracking-[-0.02em]">
-        {title}
-      </h3>
-      <p className="relative mt-3 leading-7 text-[#6d5f58]">{text}</p>
+      <div className="relative flex-1">
+        <p className="text-lg leading-8 text-[#3d3240]">{quote}</p>
+      </div>
+      <div className="relative mt-6 flex items-center gap-4 border-t border-[#eadfd2] pt-5">
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${color} text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]`}
+        >
+          {initials}
+        </div>
+        <div>
+          <p className="font-semibold text-[#261f2d]">{name}</p>
+          <p className="text-sm text-[#6d5f58]">{event}</p>
+        </div>
+      </div>
     </article>
   );
 }
 
-function SocialStat({ value, text }: { value: string; text: string }) {
+function SocialStat({
+  value,
+  text,
+  featured,
+}: {
+  value: string;
+  text: string;
+  featured?: boolean;
+}) {
   return (
-    <div className="motion-view group relative overflow-hidden rounded-[34px] border border-white/80 bg-white/72 p-7 shadow-[0_24px_80px_rgba(38,31,45,0.08)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-[0_34px_100px_rgba(38,31,45,0.12)]">
-      <div className="absolute right-[-5rem] top-[-5rem] h-40 w-40 rounded-full bg-[#f06f4f]/0 blur-3xl transition group-hover:bg-[#f06f4f]/12" />
-      <p className="relative text-5xl font-semibold tracking-[-0.07em] text-[#261f2d] sm:text-6xl">
+    <div
+      className={`motion-view group relative overflow-hidden rounded-[34px] border p-7 shadow-[0_24px_80px_rgba(38,31,45,0.08)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-[0_34px_100px_rgba(38,31,45,0.12)] ${
+        featured
+          ? 'border-[#f06f4f]/20 bg-[#261f2d]'
+          : 'border-white/80 bg-white/72'
+      }`}
+    >
+      <div
+        className={`absolute -right-20 -top-20 h-40 w-40 rounded-full blur-3xl transition group-hover:opacity-100 ${
+          featured ? 'bg-[#f06f4f]/20 opacity-60' : 'bg-[#f06f4f]/0 group-hover:bg-[#f06f4f]/12'
+        }`}
+      />
+      <p
+        className={`relative font-semibold tracking-[-0.07em] ${
+          featured
+            ? 'text-6xl text-[#f06f4f] sm:text-7xl'
+            : 'text-5xl text-[#261f2d] sm:text-6xl'
+        }`}
+      >
         {value}
       </p>
-      <p className="relative mt-4 max-w-xs text-base leading-7 text-[#6d5f58]">
+      <p
+        className={`relative mt-4 max-w-xs text-base leading-7 ${
+          featured ? 'text-white/70' : 'text-[#6d5f58]'
+        }`}
+      >
         {text}
       </p>
     </div>

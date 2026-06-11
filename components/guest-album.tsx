@@ -228,8 +228,8 @@ export function GuestAlbum({ event }: Props) {
   const uploadButtonLabel = eventLocked
     ? 'Envios encerrados'
     : guestToken
-      ? 'Enviar fotos ou vídeos'
-      : 'Preparando seu acesso';
+      ? 'Enviar fotos e vídeos'
+      : 'Preparando seu acesso...';
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -688,13 +688,31 @@ export function GuestAlbum({ event }: Props) {
 
           <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
             <div className="animate-[landing-rise_700ms_ease-out_90ms_both]">
-              <h1 className="text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-7xl lg:text-8xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ffd7a4]">
+                Você faz parte deste álbum
+              </p>
+              <h1 className="mt-3 text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-7xl lg:text-8xl">
                 {event.name}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-white/74 sm:text-lg sm:leading-8">
-                Envie as fotos e vídeos que você registrou. O processo é rápido,
-                sem cadastro e feito para funcionar bem no celular.
+                Aquela foto linda que você acabou de tirar? Ela entra no álbum
+                da festa em segundos — sem aplicativo, sem cadastro, direto da
+                galeria do seu celular.
               </p>
+              <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-white/78 sm:text-sm">
+                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-white/14 bg-white/10 px-3 backdrop-blur-md">
+                  <span className="text-[#ffd7a4]">1.</span>
+                  Toque no botão
+                </span>
+                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-white/14 bg-white/10 px-3 backdrop-blur-md">
+                  <span className="text-[#ffd7a4]">2.</span>
+                  Escolha na galeria
+                </span>
+                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-white/14 bg-white/10 px-3 backdrop-blur-md">
+                  <span className="text-[#ffd7a4]">3.</span>
+                  Pronto, enviado!
+                </span>
+              </div>
             </div>
 
             <aside className="flex max-h-[min(46rem,calc(100vh-6rem))] animate-[landing-rise_760ms_ease-out_180ms_both] flex-col overflow-hidden rounded-[30px] border border-white/70 bg-[#fffaf5] p-3 text-[#261f2d] shadow-[0_24px_80px_rgba(0,0,0,0.30)] sm:p-4 lg:self-end">
@@ -724,18 +742,25 @@ export function GuestAlbum({ event }: Props) {
                   {uploadButtonLabel}
                 </span>
                 <span className="mt-2 max-w-xs text-sm leading-6 text-[#6d5f58]">
-                  Toque aqui ou arraste vários arquivos.
+                  Toque e escolha direto da galeria — pode mandar várias de
+                  uma vez.
                 </span>
                 <span className="mt-2 text-xs font-medium text-[#8a7a70]">
-                  Fotos 30 MB · vídeos 500 MB
+                  Fotos até 30 MB · vídeos até 500 MB
                 </span>
               </button>
+
+              <p className="mt-3 flex items-center justify-center gap-2 rounded-[20px] bg-[#f2eadf] px-4 py-2.5 text-center text-xs font-medium leading-5 text-[#6d5f58]">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-[#245b3c]" />
+                Só você e quem organiza a festa veem seus envios.
+              </p>
 
               {eventLocked ? (
                 <div className="mt-3 rounded-[20px] border border-[#f1b5a8] bg-[#fff1ed] px-4 py-3 text-[#9f2d20]">
                   <div className="flex min-w-0 items-start gap-3">
                     <p className="min-w-0 break-words text-sm font-medium leading-6">
-                      Este evento foi encerrado e não recebe novos envios.
+                      Os envios deste evento foram encerrados pelo organizador.
+                      Tudo o que você já enviou está guardado com segurança.
                     </p>
                   </div>
                 </div>
@@ -754,7 +779,7 @@ export function GuestAlbum({ event }: Props) {
                   Seus envios
                 </p>
                 <h2 className="mt-2 text-4xl font-semibold leading-none tracking-[-0.055em] sm:text-5xl">
-                  Sua coleção neste evento
+                  Suas lembranças nesta festa
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -785,7 +810,7 @@ export function GuestAlbum({ event }: Props) {
               <div className="mt-6 flex min-h-72 items-center justify-center rounded-[30px] border border-dashed border-[#d9cec5] bg-white/72 text-[#6d5f58]">
                 <div className="flex items-center gap-3 font-medium">
                   <Loader2 className="h-5 w-5 animate-spin text-[#f06f4f]" />
-                  Carregando seus envios...
+                  Buscando suas lembranças...
                 </div>
               </div>
             ) : media.length === 0 ? (
@@ -795,11 +820,12 @@ export function GuestAlbum({ event }: Props) {
                     <Camera className="h-8 w-8" />
                   </span>
                   <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em]">
-                    Nenhuma lembrança enviada ainda
+                    Sua primeira lembrança começa aqui
                   </h3>
                   <p className="mt-3 leading-7 text-[#6d5f58]">
-                    Assim que você enviar uma foto ou vídeo, sua coleção aparece
-                    aqui com prévias e controle de exclusão.
+                    Aquele registro que está na sua galeria agora é exatamente
+                    o que vai fazer falta no álbum. Envie e veja aparecer aqui
+                    em segundos — e você pode excluir quando quiser.
                   </p>
                   <button
                     className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#261f2d] px-5 font-semibold text-white shadow-[0_16px_38px_rgba(38,31,45,0.22)] transition hover:-translate-y-0.5 disabled:opacity-60"
@@ -808,7 +834,7 @@ export function GuestAlbum({ event }: Props) {
                     onClick={() => requestUpload()}
                   >
                     <UploadCloud className="h-5 w-5" />
-                    Enviar agora
+                    Enviar minha primeira foto
                   </button>
                 </div>
               </div>
@@ -868,8 +894,11 @@ export function GuestAlbum({ event }: Props) {
                           )
                         }
                       >
-                        Carregar mais{' '}
-                        {Math.min(MEDIA_PAGE_SIZE, remainingMediaCount)}
+                        Mostrar mais{' '}
+                        {Math.min(MEDIA_PAGE_SIZE, remainingMediaCount)}{' '}
+                        {Math.min(MEDIA_PAGE_SIZE, remainingMediaCount) === 1
+                          ? 'lembrança'
+                          : 'lembranças'}
                       </button>
                     ) : null}
                     {visibleMediaCount > INITIAL_VISIBLE_MEDIA ? (
@@ -888,6 +917,19 @@ export function GuestAlbum({ event }: Props) {
               </>
             )}
           </div>
+
+          <footer className="mt-8 pb-2 text-center">
+            <p className="text-sm leading-6 text-[#8a7a70]">
+              Álbum digital de evento criado com{' '}
+              <Link
+                className="font-semibold text-[#245b3c] underline underline-offset-2 transition hover:text-[#f06f4f]"
+                href="/"
+              >
+                Lembraí
+              </Link>
+              {' '}— crie o QR Code da sua próxima festa também.
+            </p>
+          </footer>
         </div>
       </section>
       {typeof document !== 'undefined' && uploadDockItems.length > 0
@@ -926,15 +968,15 @@ export function GuestAlbum({ event }: Props) {
                   Antes de enviar
                 </p>
                 <h2 className="mt-1 text-3xl font-semibold leading-none tracking-[-0.055em]">
-                  Confirme o uso das suas mídias
+                  Um combinado rápido
                 </h2>
               </div>
             </div>
 
             <div className="mt-5 rounded-[24px] border border-[#eadfd2] bg-white/76 p-4 text-sm leading-6 text-[#5d514c]">
-              Ao continuar, você confirma que entende que suas fotos e vídeos
-              serão armazenados para este evento, poderão ser acessados pelo
-              organizador e serão tratados conforme a{' '}
+              Suas fotos e vídeos ficam guardados no álbum privado deste evento
+              e podem ser vistos e baixados por quem organizou a festa. Nada
+              vai para galerias públicas. Ao continuar, você concorda com a{' '}
               <Link
                 className="font-semibold text-[#261f2d] underline underline-offset-2"
                 href="/privacy"
@@ -955,8 +997,11 @@ export function GuestAlbum({ event }: Props) {
 
             {pendingFiles?.length ? (
               <p className="mt-4 rounded-2xl bg-[#f2eadf] px-4 py-3 text-sm font-medium text-[#6d5f58]">
-                {pendingFiles.length} arquivo(s) aguardando confirmação para
-                envio.
+                {pendingFiles.length}{' '}
+                {pendingFiles.length === 1
+                  ? 'arquivo pronto para entrar no álbum'
+                  : 'arquivos prontos para entrar no álbum'}{' '}
+                — só falta a sua confirmação.
               </p>
             ) : null}
 
@@ -966,7 +1011,7 @@ export function GuestAlbum({ event }: Props) {
                 onClick={closePrivacyModal}
                 className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#ddd1c6] bg-white px-4 font-semibold text-[#46394e] transition hover:bg-[#fff7ed]"
               >
-                Cancelar
+                Agora não
               </button>
               <button
                 type="button"
@@ -974,7 +1019,7 @@ export function GuestAlbum({ event }: Props) {
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#f06f4f] px-4 font-semibold text-white shadow-[0_16px_34px_rgba(240,111,79,0.28)] transition hover:-translate-y-0.5 hover:bg-[#df6246]"
               >
                 <CheckCircle2 className="h-5 w-5" />
-                Aceitar e continuar
+                Aceitar e enviar
               </button>
             </div>
           </div>
@@ -999,10 +1044,11 @@ export function GuestAlbum({ event }: Props) {
               <Trash2 className="h-5 w-5" />
             </span>
             <h2 className="mt-5 text-3xl font-semibold tracking-[-0.055em]">
-              Excluir este arquivo?
+              Excluir esta lembrança?
             </h2>
             <p className="mt-3 leading-7 text-[#6d5f58]">
-              Ele sairá da sua coleção e não poderá ser recuperado por aqui.
+              Ela sai do álbum do evento e o organizador deixa de receber este
+              arquivo. Essa ação não pode ser desfeita.
             </p>
             <p className="mt-4 truncate rounded-2xl bg-white px-4 py-3 text-sm font-medium text-[#46394e]">
               {pendingDelete.originalFileName}
@@ -1013,7 +1059,7 @@ export function GuestAlbum({ event }: Props) {
                 onClick={() => setPendingDelete(null)}
                 className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#ddd1c6] bg-white px-4 font-semibold text-[#46394e] transition hover:bg-[#fff7ed]"
               >
-                Cancelar
+                Manter arquivo
               </button>
               <button
                 type="button"
@@ -1026,7 +1072,7 @@ export function GuestAlbum({ event }: Props) {
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}
-                Excluir
+                Sim, excluir
               </button>
             </div>
           </div>
@@ -1109,10 +1155,16 @@ function UploadDock({
           <div className="flex items-center justify-between gap-3">
             <p className="truncate font-semibold">
               {hasActiveUploads
-                ? `Enviando ${activeItems.length} arquivo(s)`
+                ? `Guardando ${activeItems.length} ${
+                    activeItems.length === 1 ? 'lembrança' : 'lembranças'
+                  } no álbum`
                 : hasQueuedUploads
-                  ? `${queuedCount} arquivo(s) em espera`
-                  : `${errorCount} arquivo(s) com erro`}
+                  ? `${queuedCount} ${
+                      queuedCount === 1 ? 'arquivo na fila' : 'arquivos na fila'
+                    }`
+                  : `${errorCount} ${
+                      errorCount === 1 ? 'envio falhou' : 'envios falharam'
+                    }`}
             </p>
             <span
               className={`shrink-0 text-xs font-semibold ${
@@ -1126,18 +1178,18 @@ function UploadDock({
               {hasActiveUploads
                 ? `${averageProgress}%`
                 : hasQueuedUploads
-                  ? 'Fila'
-                  : 'Erro'}
+                  ? 'Na fila'
+                  : 'Falhou'}
             </span>
           </div>
           <p className="mt-0.5 truncate text-xs text-[#7a6c62]">
             {hasActiveUploads
-              ? `${uploadingCount} ativo(s) · ${queuedCount} em espera${
+              ? `Não feche esta página · ${uploadingCount} enviando · ${queuedCount} na fila${
                   errorCount > 0 ? ` · ${errorCount} com erro` : ''
-                } · até ${MAX_CONCURRENT_UPLOADS} por vez`
+                }`
               : hasQueuedUploads
-                ? 'Aguardando vaga para iniciar'
-                : 'Aguardando nova tentativa'}
+                ? 'Começando em instantes — pode continuar na festa.'
+                : 'Toque na seta para tentar de novo.'}
           </p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#eadfd5]">
             <div
@@ -1173,7 +1225,11 @@ function UploadDock({
           </div>
           {items.length > 8 ? (
             <p className="mt-3 rounded-2xl bg-[#f2eadf] px-3 py-2 text-center text-xs font-semibold text-[#6d5f58]">
-              +{items.length - 8} arquivo(s) continuam na fila.
+              +{items.length - 8}{' '}
+              {items.length - 8 === 1
+                ? 'arquivo continua na fila'
+                : 'arquivos continuam na fila'}{' '}
+              — tudo será enviado.
             </p>
           ) : null}
         </div>
@@ -1213,12 +1269,12 @@ function UploadRow({
           </p>
           <p className="mt-1 truncate text-[11px] font-medium uppercase tracking-[0.14em] text-[#8a7a70]">
             {isError
-              ? 'Aguardando nova tentativa'
+              ? 'Falhou · toque para reenviar'
               : isDone
-                ? 'Envio concluído'
+                ? 'Guardado no álbum'
                 : isQueued
-                  ? 'Na fila'
-                  : 'Enviando arquivo'}
+                  ? 'Na fila de envio'
+                  : 'Enviando agora'}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -1236,10 +1292,10 @@ function UploadRow({
             {isDone ? (
               <>
                 <AnimatedCheckIcon />
-                Concluído
+                No álbum
               </>
             ) : isError ? (
-              'Erro'
+              'Falhou'
             ) : isQueued ? (
               'Na fila'
             ) : (
@@ -1504,12 +1560,12 @@ function UnavailablePreview({
       </span>
       <div>
         <p className="text-sm font-semibold text-[#46394e]">
-          Prévia indisponível
+          Enviado com sucesso
         </p>
         <p className="mt-1 text-xs leading-5">
           {isHeic
-            ? 'HEIC foi enviado, mas este navegador não exibe prévia.'
-            : 'Arquivo enviado sem prévia.'}
+            ? 'Sua foto HEIC já está no álbum — este navegador só não mostra a prévia.'
+            : 'O arquivo está guardado no álbum, só sem prévia por aqui.'}
         </p>
       </div>
       {item.signedUrl ? (
@@ -1519,7 +1575,7 @@ function UnavailablePreview({
           target="_blank"
           rel="noreferrer"
         >
-          Abrir arquivo
+          Ver arquivo
         </a>
       ) : null}
     </div>
