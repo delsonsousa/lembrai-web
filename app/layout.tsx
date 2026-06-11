@@ -64,9 +64,9 @@ export const metadata: Metadata = {
       "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado.",
     images: [
       {
-        url: "/images/lembrai-hero.png",
+        url: "/logo-lembrai.png",
         width: 1200,
-        height: 630,
+        height: 1200,
         alt: "Lembraí — Álbum digital para eventos com QR Code",
       },
     ],
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     title: "Lembraí — Álbum digital para eventos com QR Code",
     description:
       "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo.",
-    images: ["/images/lembrai-hero.png"],
+    images: ["/logo-lembrai.png"],
   },
   icons: {
     icon: "/favicon-cropped.png",
