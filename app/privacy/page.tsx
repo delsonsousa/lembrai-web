@@ -10,7 +10,7 @@ const privacyItems = [
   "Utilizamos fornecedores de infraestrutura e operação, como hospedagem, banco de dados, armazenamento, pagamento e e-mail transacional. Esses fornecedores podem processar dados pessoais conforme necessário para executar o serviço.",
   "Adotamos controles técnicos como armazenamento privado, URLs temporárias, controle de acesso, auditoria, limitação de tamanho, bloqueio de evento expirado e exclusão de objetos quando solicitada ou ao fim da retenção.",
   "O organizador pode solicitar acesso, correção, exclusão ou informações sobre dados vinculados à sua conta e aos seus eventos. Convidados podem excluir os arquivos enviados enquanto o evento estiver aberto ou solicitar suporte ao organizador.",
-  "Para solicitações de privacidade, exclusão ou dúvidas sobre tratamento de dados, entre em contato pelo canal oficial de suporte do Lembraí informado no site ou contrato.",
+  "Para solicitações de privacidade, exclusão ou dúvidas sobre tratamento de dados, entre em contato pelo formulário de contato em lembrai.com.br/contact ou pelo e-mail contato@lembraieventos.com.br.",
 ];
 
 export default function PrivacyPage() {

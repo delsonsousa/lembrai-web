@@ -301,6 +301,69 @@ export async function sendRetentionReminderEmail({
   });
 }
 
+type ContactEmailInput = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+
+export async function sendContactEmail({
+  name,
+  email,
+  subject,
+  message,
+}: ContactEmailInput) {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message).replaceAll("\n", "<br>");
+
+  const resend = getResend();
+
+  if (!resend) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[Lembraí] Contato de ${email}: ${subject}`);
+      return;
+    }
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+
+  const { error } = await resend.emails.send({
+    from: getEmailFrom(),
+    to: "contato@lembraieventos.com.br",
+    replyTo: email,
+    subject: `[Contato] ${subject}`,
+    html: emailShell(`
+      <h1 style="margin:0 0 16px;font-size:24px;line-height:1.2;color:#261f2d">Nova mensagem de contato</h1>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <tr>
+          <td style="padding:8px 0;color:#6d5f58;width:80px;vertical-align:top">Nome</td>
+          <td style="padding:8px 0;font-weight:600;color:#261f2d">${safeName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#6d5f58;vertical-align:top">E-mail</td>
+          <td style="padding:8px 0;font-weight:600;color:#261f2d">${safeEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#6d5f58;vertical-align:top">Assunto</td>
+          <td style="padding:8px 0;font-weight:600;color:#261f2d">${safeSubject}</td>
+        </tr>
+      </table>
+      <div style="background:#f6efe7;border-radius:14px;padding:16px;color:#3d3240;line-height:1.7">
+        ${safeMessage}
+      </div>
+      <p style="margin:20px 0 0;font-size:13px;color:#8a7a70">
+        Responda diretamente a este e-mail para entrar em contato com ${safeName}.
+      </p>
+    `),
+  });
+
+  if (error) {
+    throw new Error(`Resend failed: ${error.message}`);
+  }
+}
+
 export async function sendAccountExpirationEmail({
   to,
   managerName,

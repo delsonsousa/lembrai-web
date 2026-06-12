@@ -694,6 +694,9 @@ export default function Home() {
               <Link className="transition hover:text-[#f06f4f]" href="/login">
                 Acessar painel
               </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/contact">
+                Contato
+              </Link>
               <Link className="transition hover:text-[#f06f4f]" href="/privacy">
                 Privacidade
               </Link>
