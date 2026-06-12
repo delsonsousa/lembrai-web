@@ -76,6 +76,7 @@ export const metadata: Metadata = {
     description:
       "Centralize as fotos do evento corporativo em um álbum privado. Sem app, sem cadastro.",
     url: "/album-evento-corporativo",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para evento corporativo com QR Code" }],
   },
 };
 

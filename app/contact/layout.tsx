@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembrai.com.br";
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembraieventos.com.br";
 
 export const metadata: Metadata = {
   title: "Contato",
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     description:
       "Entre em contato com o Lembraí. Respondemos pelo e-mail informado em até 1 dia útil.",
     url: "/contact",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para eventos com QR Code" }],
   },
 };
 

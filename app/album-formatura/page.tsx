@@ -74,6 +74,7 @@ export const metadata: Metadata = {
     description:
       "Centralize as fotos da formatura em um álbum privado. Toda a turma envia pelo celular, sem app.",
     url: "/album-formatura",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para formatura com QR Code" }],
   },
 };
 

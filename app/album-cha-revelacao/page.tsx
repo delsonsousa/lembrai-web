@@ -73,6 +73,7 @@ export const metadata: Metadata = {
     description:
       "Centralize as fotos e vídeos do chá revelação em um álbum privado. Capture a reação de todos os ângulos.",
     url: "/album-cha-revelacao",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para chá revelação com QR Code" }],
   },
 };
 

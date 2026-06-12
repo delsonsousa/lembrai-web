@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembrai.com.br";
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembraieventos.com.br";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
     description:
       "Responsabilidades do organizador, dos convidados e da plataforma durante o uso do Lembraí.",
     url: "/terms",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para eventos com QR Code" }],
   },
 };
 

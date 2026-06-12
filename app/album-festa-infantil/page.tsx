@@ -74,6 +74,7 @@ export const metadata: Metadata = {
     description:
       "Centralize as fotos da festa infantil em um álbum privado. Os adultos enviam pelo celular, sem app.",
     url: "/album-festa-infantil",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para festa infantil com QR Code" }],
   },
 };
 

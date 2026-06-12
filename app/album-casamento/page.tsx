@@ -76,6 +76,7 @@ export const metadata: Metadata = {
     description:
       "Centralize todas as fotos dos convidados do casamento em um álbum privado. Sem app, sem cadastro.",
     url: "/album-casamento",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para casamento com QR Code" }],
   },
 };
 

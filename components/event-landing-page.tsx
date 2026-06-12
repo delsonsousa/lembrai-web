@@ -13,7 +13,7 @@ import Link from "next/link";
 import { BrandLogo } from "./brand-logo";
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembrai.com.br";
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembraieventos.com.br";
 
 const ALL_EVENTS = [
   { label: "Casamento", slug: "album-casamento" },

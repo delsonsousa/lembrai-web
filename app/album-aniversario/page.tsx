@@ -74,6 +74,7 @@ export const metadata: Metadata = {
     description:
       "Centralize as fotos dos convidados do aniversário em um álbum privado. Sem app, sem cadastro.",
     url: "/album-aniversario",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Lembraí — Álbum digital para aniversário com QR Code" }],
   },
 };
 
