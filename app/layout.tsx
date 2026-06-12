@@ -14,7 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lembrai.com.br";
+  process.env.NEXT_PUBLIC_APP_URL?.includes(".vercel.app")
+    ? "https://lembraieventos.com.br"
+    : process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
+      "https://lembraieventos.com.br";
+
+const socialDescription =
+  "Receba fotos e vídeos dos convidados por QR Code, sem app e em um álbum privado.";
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
@@ -25,6 +31,21 @@ const organizationJsonLd = {
   sameAs: [],
   description:
     "Plataforma brasileira de álbum digital para eventos com QR Code. Centralize fotos e vídeos dos convidados em um único lugar privado.",
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Lembraí",
+  url: siteUrl,
+  description:
+    "Álbum digital para eventos com QR Code. Receba as fotos e vídeos dos convidados em tempo real, em um painel privado.",
+  inLanguage: "pt-BR",
+  publisher: {
+    "@type": "Organization",
+    name: "Lembraí",
+    url: siteUrl,
+  },
 };
 
 export const metadata: Metadata = {
@@ -58,18 +79,31 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
+    url: siteUrl,
     siteName: "Lembraí",
     title: "Lembraí — Álbum digital para eventos com QR Code",
-    description:
-      "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado.",
-    images: [],
+    description: socialDescription,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Lembraí — Álbum digital para eventos com QR Code",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Lembraí — Álbum digital para eventos com QR Code",
-    description:
-      "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo.",
-    images: [],
+    description: socialDescription,
+    images: [
+      {
+        url: "/twitter-image",
+        width: 1200,
+        height: 630,
+        alt: "Lembraí — Álbum digital para eventos com QR Code",
+      },
+    ],
   },
   icons: {
     icon: "/favicon-cropped.png",
@@ -94,6 +128,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
           }}
         />
         <AppToaster />

@@ -13,17 +13,22 @@ import {
   WandSparkles,
 } from 'lucide-react';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { BrandLogo } from '@/components/brand-logo';
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ??
-  'https://lembrai.com.br';
+  process.env.NEXT_PUBLIC_APP_URL?.includes('.vercel.app')
+    ? 'https://lembraieventos.com.br'
+    : process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ??
+      'https://lembraieventos.com.br';
 
 const pageTitle = 'Álbum digital para eventos com QR Code | Lembraí';
 const pageDescription =
   'Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado. Pagamento único de R$ 199 por evento.';
+const socialDescription =
+  'Receba fotos e vídeos dos convidados por QR Code, sem app e em um álbum privado.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -40,18 +45,32 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   openGraph: {
     title: pageTitle,
-    description: pageDescription,
+    description: socialDescription,
     url: '/',
     siteName: 'Lembraí',
     locale: 'pt_BR',
     type: 'website',
-    images: [],
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: pageTitle,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: pageTitle,
-    description: pageDescription,
-    images: [],
+    description: socialDescription,
+    images: [
+      {
+        url: '/twitter-image',
+        width: 1200,
+        height: 630,
+        alt: pageTitle,
+      },
+    ],
   },
 };
 
@@ -119,6 +138,34 @@ const productJsonLd = {
   },
 };
 
+const howToJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'Como usar o Lembraí para centralizar fotos do evento',
+  description:
+    'Crie um álbum digital para o seu evento com QR Code e receba as fotos e vídeos dos convidados em três passos simples.',
+  step: [
+    {
+      '@type': 'HowToStep',
+      position: 1,
+      name: 'Crie o evento em minutos',
+      text: 'Pague uma vez, dê um nome à festa e pronto: o Lembraí gera o link privado e o QR Code exclusivo do seu álbum na hora.',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 2,
+      name: 'Espalhe o QR Code na festa',
+      text: 'Imprima e coloque na entrada, nas mesas, no convite ou no telão. O convidado aponta a câmera e o álbum abre direto no navegador.',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 3,
+      name: 'Receba tudo em tempo real',
+      text: 'Cada foto e vídeo cai direto no seu painel privado, organizado e pronto para baixar na qualidade original — durante e depois da festa.',
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <main className="landing-motion min-h-screen bg-[#f6efe7] text-[#261f2d]">
@@ -134,9 +181,22 @@ export default function Home() {
           __html: JSON.stringify(productJsonLd).replace(/</g, '\\u003c'),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(howToJsonLd).replace(/</g, '\\u003c'),
+        }}
+      />
 
       <section className="relative overflow-hidden bg-[#211927]">
-        <div className="motion-hero-photo absolute inset-0 bg-[url('/images/lembrai-hero.png')] bg-cover bg-center opacity-55 saturate-[0.85]" />
+        <Image
+          src="/images/lembrai-hero.png"
+          alt="Convidados reunidos em festa celebrando e fotografando momentos especiais"
+          fill
+          priority
+          sizes="100vw"
+          className="motion-hero-photo object-cover opacity-55 saturate-[0.85]"
+        />
         <div className="motion-gradient-drift absolute inset-0 bg-[radial-gradient(circle_at_72%_24%,rgba(255,215,164,0.22),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(240,111,79,0.30),transparent_32%),linear-gradient(90deg,rgba(22,16,27,1)_0%,rgba(34,25,41,0.98)_38%,rgba(38,31,45,0.78)_63%,rgba(38,31,45,0.34)_100%)]" />
         <div className="motion-spark-field absolute inset-0" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,12,22,0.12)_0%,rgba(18,12,22,0.08)_46%,rgba(18,12,22,0.92)_100%)]" />
@@ -703,6 +763,24 @@ export default function Home() {
               </Link>
               <Link className="transition hover:text-[#f06f4f]" href="/terms">
                 Termos de uso
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/album-casamento">
+                Álbum de casamento
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/album-aniversario">
+                Álbum de aniversário
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/album-formatura">
+                Álbum de formatura
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/album-cha-revelacao">
+                Álbum de chá revelação
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/album-evento-corporativo">
+                Eventos corporativos
+              </Link>
+              <Link className="transition hover:text-[#f06f4f]" href="/album-festa-infantil">
+                Festa infantil
               </Link>
             </nav>
           </div>
