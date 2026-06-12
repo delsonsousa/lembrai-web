@@ -45,13 +45,13 @@ export const metadata: Metadata = {
     siteName: 'Lembraí',
     locale: 'pt_BR',
     type: 'website',
-    images: [{ url: '/logo-lembrai.png', width: 1200, height: 1200, alt: pageTitle }],
+    images: [],
   },
   twitter: {
     card: 'summary_large_image',
     title: pageTitle,
     description: pageDescription,
-    images: ['/logo-lembrai.png'],
+    images: [],
   },
 };
 
@@ -108,7 +108,7 @@ const productJsonLd = {
   '@type': 'Product',
   name: 'Lembraí — Álbum digital para eventos com QR Code',
   description: pageDescription,
-  image: `${siteUrl}/logo-lembrai.png`,
+  image: `${siteUrl}/logosLembrai/lembrai-wordmark-ink.png`,
   brand: { '@type': 'Brand', name: 'Lembraí' },
   offers: {
     '@type': 'Offer',
@@ -152,8 +152,9 @@ export default function Home() {
               aria-label="Lembraí — álbum digital para eventos"
             >
               <BrandLogo
-                className="h-full w-full object-contain brightness-0 invert"
+                className="h-full w-full object-contain"
                 sizes="128px"
+                variant="light"
               />
             </Link>
 

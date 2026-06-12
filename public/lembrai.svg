@@ -1,0 +1,8 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="630" fill="#14151A"/>
+<rect x="30" y="30" width="1140" height="570" fill="none" stroke="#2B2D35" stroke-width="1"/>
+<text x="297.8828125" y="352" font-family="LembraiSerif" font-size="184" fill="#F4F2EC" letter-spacing="1">Lembraı</text>
+<path transform="translate(880.5546875,249) rotate(14)" fill="#D2B266" d="M 0,-19 Q 2.09,-2.09 19,0 Q 2.09,2.09 0,19 Q -2.09,2.09 -19,0 Q -2.09,-2.09 0,-19 Z"/>
+<line x1="572.0" y1="404" x2="628.0" y2="404" stroke="#D2B266" stroke-width="1.2"/>
+<text x="256.4453125" y="448" font-family="LembraiSans" font-size="19" fill="#9A9DA6" letter-spacing="5.5">FOTOS E VÍDEOS DO SEU EVENTO EM UM SÓ LUGAR</text>
+</svg>

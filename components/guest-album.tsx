@@ -674,8 +674,9 @@ export function GuestAlbum({ event }: Props) {
           <div className="flex animate-[landing-rise_620ms_ease-out_both] items-center justify-between gap-3">
             <div className="h-8 w-24">
               <BrandLogo
-                className="h-full w-full object-contain brightness-0 invert"
+                className="h-full w-full object-contain"
                 sizes="96px"
+                variant="light"
               />
             </div>
             <span className="inline-flex min-h-9 items-center gap-2 rounded-full border border-white/14 bg-white/10 px-3 text-xs font-semibold text-white/76 backdrop-blur-md sm:px-4 sm:text-sm">

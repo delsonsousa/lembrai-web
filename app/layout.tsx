@@ -21,7 +21,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "Lembraí",
   url: siteUrl,
-  logo: `${siteUrl}/images/lembrai-hero.png`,
+  logo: `${siteUrl}/logosLembrai/lembrai-wordmark-ink.png`,
   sameAs: [],
   description:
     "Plataforma brasileira de álbum digital para eventos com QR Code. Centralize fotos e vídeos dos convidados em um único lugar privado.",
@@ -62,21 +62,14 @@ export const metadata: Metadata = {
     title: "Lembraí — Álbum digital para eventos com QR Code",
     description:
       "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo. Sem app, sem cadastro, álbum 100% privado.",
-    images: [
-      {
-        url: "/logo-lembrai.png",
-        width: 1200,
-        height: 1200,
-        alt: "Lembraí — Álbum digital para eventos com QR Code",
-      },
-    ],
+    images: [],
   },
   twitter: {
     card: "summary_large_image",
     title: "Lembraí — Álbum digital para eventos com QR Code",
     description:
       "Receba as fotos e vídeos dos convidados em tempo real com um QR Code exclusivo.",
-    images: ["/logo-lembrai.png"],
+    images: [],
   },
   icons: {
     icon: "/favicon-cropped.png",
