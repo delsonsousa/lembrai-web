@@ -35,7 +35,7 @@ export function getSupabaseAdmin() {
 export function getSupabasePublicConfig() {
   return {
     url: requiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    anonKey: requiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    anonKey: requiredEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
   };
 }
 
