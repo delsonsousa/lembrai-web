@@ -85,7 +85,7 @@ const sections = [
   {
     heading: "Contato para privacidade",
     items: [
-      "Para solicitações de privacidade, exclusão ou dúvidas sobre tratamento de dados, entre em contato pelo formulário de contato em lembrai.com.br/contact ou pelo e-mail contato@lembraieventos.com.br.",
+      "Para solicitações de privacidade, exclusão ou dúvidas sobre tratamento de dados, entre em contato pelo formulário de contato em lembraieventos.com.br/contact ou pelo e-mail contato@lembraieventos.com.br.",
     ],
   },
 ];
