@@ -99,6 +99,22 @@ export function EventLandingPage({ config }: { config: EventPageConfig }) {
     })),
   };
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: `Lembraí — Álbum digital para ${config.eventName} com QR Code`,
+    description: `Centralize as fotos e vídeos dos convidados do ${config.eventName} em um álbum privado com QR Code. Sem app, sem cadastro.`,
+    image: `${siteUrl}/logosLembrai/lembrai-wordmark-ink.png`,
+    brand: { "@type": "Brand", name: "Lembraí" },
+    offers: {
+      "@type": "Offer",
+      price: "199.00",
+      priceCurrency: "BRL",
+      availability: "https://schema.org/InStock",
+      url: `${siteUrl}/${config.slug}`,
+    },
+  };
+
   const relatedEvents = ALL_EVENTS.filter((e) => e.slug !== config.slug);
 
   return (
@@ -113,6 +129,12 @@ export function EventLandingPage({ config }: { config: EventPageConfig }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd).replace(/</g, "\\u003c"),
         }}
       />
 
@@ -151,7 +173,18 @@ export function EventLandingPage({ config }: { config: EventPageConfig }) {
             </Link>
           </nav>
 
-          <div className="py-20 text-white sm:py-28">
+          <nav
+            aria-label="Breadcrumb"
+            className="mt-5 flex items-center gap-2 text-sm text-white/50"
+          >
+            <Link href="/" className="transition hover:text-white/80">
+              Início
+            </Link>
+            <span>/</span>
+            <span className="text-white/75">{config.breadcrumbName}</span>
+          </nav>
+
+          <div className="py-14 text-white sm:py-20">
             <div className="mx-auto max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 text-sm text-white/82 backdrop-blur-md">
                 <Sparkles className="h-4 w-4 text-[#ffd7a4]" />
