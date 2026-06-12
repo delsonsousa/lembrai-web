@@ -771,7 +771,7 @@ export function GuestAlbum({ event }: Props) {
         </div>
       </section>
 
-      <section className="relative z-10 pb-12 pt-5 sm:pt-7">
+      <section className="relative z-10 pb-28 pt-5 sm:pt-7 lg:pb-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-[30px] border border-white/80 bg-[#fffaf5] p-4 shadow-[0_18px_70px_rgba(38,31,45,0.10)] sm:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -1079,6 +1079,20 @@ export function GuestAlbum({ event }: Props) {
           </div>
         </div>
       ) : null}
+
+      {!eventLocked && uploadDockItems.length === 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-linear-to-t from-[#f4eee6]/95 to-transparent lg:hidden">
+          <button
+            type="button"
+            disabled={uploadDisabled}
+            onClick={() => requestUpload()}
+            className="flex w-full min-h-14 items-center justify-center gap-2.5 rounded-2xl bg-[#f06f4f] px-6 text-base font-semibold text-white shadow-[0_18px_50px_rgba(240,111,79,0.40)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <UploadCloud className="h-5 w-5" />
+            {uploadButtonLabel}
+          </button>
+        </div>
+      )}
     </main>
   );
 }

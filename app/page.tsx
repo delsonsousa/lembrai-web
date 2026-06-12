@@ -244,7 +244,7 @@ export default function Home() {
             </Link>
           </nav>
 
-          <div className="grid flex-1 items-center gap-14 py-16 sm:py-20 lg:grid-cols-[0.95fr_0.82fr]">
+          <div className="grid flex-1 items-center gap-6 py-10 sm:py-14 lg:gap-14 lg:py-20 lg:grid-cols-[0.95fr_0.82fr]">
             <div className="max-w-4xl text-white">
               <div className="motion-rise motion-delay-2 inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 text-sm text-white/82 shadow-[0_16px_50px_rgba(0,0,0,0.22)] backdrop-blur-md">
                 <Sparkles className="motion-icon-spark h-4 w-4 text-[#ffd7a4]" />
@@ -298,7 +298,9 @@ export default function Home() {
               </div>
             </div>
 
-            <HeroProductMockup />
+            <div className="hidden lg:block">
+              <HeroProductMockup />
+            </div>
           </div>
         </div>
       </section>
